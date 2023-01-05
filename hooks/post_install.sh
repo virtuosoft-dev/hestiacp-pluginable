@@ -27,7 +27,7 @@ do_action( 'pre_patch_hestiacp' );
  * @param string $replace The replace string.
  */ 
 function patch_file( $file, $search, $replace ) {
-    if ( file_exists( $file ) && ! strstr( file_get_contents( $file ), $replace ) ) {
+    if ( file_exists( $file ) && ! strstr( file_get_contents( $file ), $replace ) && strstr( file_get_contents( $file ), $search )) {
         $content = file_get_contents( $file );
         $content = str_replace( $search, $replace, $content );
         file_put_contents( $file, $content );
