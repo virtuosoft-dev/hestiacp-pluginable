@@ -42,7 +42,7 @@ add_action( 'list-users', function( $args ) {
 });
 ```
 
-It is important that an add_action hook returns (passes along) the incomming argument (the `$args` parameter above).
+It is important that an add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like WordPress](https://developer.wordpress.org/reference/functions/add_action/).
 
 The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 43 in pluginable.php:
 
