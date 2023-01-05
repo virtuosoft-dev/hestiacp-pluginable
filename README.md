@@ -2,19 +2,20 @@
 Extend Hestia Control Panel via a simple, WordPress-like plugins API.
 
 ### Installation
-Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks:
+Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks as root user:
 
 ```
+sudo -s
 cd /tmp
 wget https://github.com/Steveorevo/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
-sudo mv hestiacp-pluginable-main/hooks /etc/hestiacp
+mv hestiacp-pluginable-main/hooks /etc/hestiacp
 ```
 
 Run the post_install.sh script. This will automatically be run anytime HestiaCP updates itself. Currently, this project is compatible with HestiaCP v1.6.14.
 
 ```
-sudo /etc/hestiacp/hooks/post_install.sh
+/etc/hestiacp/hooks/post_install.sh
 ```
 
 ### Creating a plugin
@@ -42,7 +43,7 @@ add_action( 'list-users', function( $args ) {
 });
 ```
 
-It is important that an add_action hook returns (passes along) the incomming argument (the `$args` parameter above).
+It is important that an add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like WordPress](https://developer.wordpress.org/reference/functions/add_action/).
 
 The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 43 in pluginable.php:
 
