@@ -1,5 +1,5 @@
 # hestiacp-pluginable
-Extend Hestia Control Panel via simple, WordPress-like plugins API.
+Extend Hestia Control Panel via a simple, WordPress-like plugins API.
 
 ### Installation
 Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks:
@@ -8,7 +8,7 @@ Simply download and unpack the source code files and move the hooks folder to /e
 cd /tmp
 wget https://github.com/Steveorevo/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
-sudo mv hestiacp-pluginable-main,/hooks /etc/hestiacp
+sudo mv hestiacp-pluginable-main/hooks /etc/hestiacp
 ```
 
 Run the post_install.sh script. This will automatically be run anytime HestiaCP updates itself. Currently, this project is compatible with HestiaCP v1.6.14.
@@ -28,12 +28,12 @@ and contain the file plugin.php at:
 /usr/local/hestia/plugins/example/plugin.php
 ```
 
-A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or web page control panel is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
+A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
 
 ```
 <?php
 /**
- * A sample plugin for hestiacp-pluginhooks 
+ * A sample plugin for hestiacp-pluginable 
  */
 
 add_action( 'list-users', function( $args ) {
@@ -42,7 +42,7 @@ add_action( 'list-users', function( $args ) {
 });
 ```
 
-It is important that an add_action hook returns (passes along) the incomming arguments ( the `$args` parameter above).
+It is important that an add_action hook returns (passes along) the incomming argument (the `$args` parameter above).
 
 The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 43 in pluginable.php:
 
@@ -51,4 +51,9 @@ file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_e
 ```
 
 This will cause all possible hooks to be logged with a sample of the arguments in the log file at:
-`/tmp/hestia.log`. Be sure to re-run the post_install.sh script if you modify the pluginable.php file; as described at the top of this document in the installation section. 
+`/tmp/hestia.log`. Be sure to re-run the post_install.sh script if you modify the pluginable.php file; as described at the top of this document in the installation section. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/tmp/hestia.log` file:
+
+```
+cat /tmp/hestia.log
+```
+
