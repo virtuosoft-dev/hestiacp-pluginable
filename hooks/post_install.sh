@@ -69,20 +69,33 @@ patch_file(
 );
 
 // templates/header.html
+// Accomodate format changes and rename to header.php (https://github.com/Steveorevo/hestiacp/commits/main/web/templates)
+$file = '/usr/local/hestia/web/templates/header.html';
+if ( !file_exists($file) ) { 
+    $file = '/usr/local/hestia/web/templates/header.php';
+    if ( !file_exists($file) ) {
+        echo "Could not find $file\n";
+    }
+}
 patch_file(
-    '/usr/local/hestia/web/templates/header.html',
+    $file,
     "<head>",
     "<head><" . "?php ob_start(); ?" . ">"
 );
 patch_file(
-    '/usr/local/hestia/web/templates/header.html',
+    $file,
     "</head>",
     "<" . "?php echo do_action('head', ob_get_clean()); ?" . "></head>"
 );
 patch_file(
-    '/usr/local/hestia/web/templates/header.html',
+    $file,
     "<body class=\"body-<?=strtolower(\$TAB)?> lang-<?=\$_SESSION['language']?>\">",
     "<body class=\"body-<?=strtolower(\$TAB)?> lang-<?=\$_SESSION['language']?>\"><" . "?php ob_start(); ?" . ">"
+);
+patch_file(
+    $file,
+    "<body class=\"body-<?= strtolower(\$TAB) ?> lang-<?= \$_SESSION[\"language\"] ?>\">",
+    "<body class=\"body-<?= strtolower(\$TAB) ?> lang-<?= \$_SESSION[\"language\"] ?>\"><" . "?php ob_start(); ?" . ">"
 );
 
 // templates/footer.html
