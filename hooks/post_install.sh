@@ -59,11 +59,6 @@ patch_file(
 );
 patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    'function render_page($user, $TAB, $page)' . "\n{\n",
-    'function render_page($user, $TAB, $page)' . "\n{\n    include( '/usr/local/hestia/web/pluginable.php' );\n"
-);
-patch_file(
-    '/usr/local/hestia/web/inc/main.php',
     "include(\$__template_dir . 'pages/' . \$page . '.html');",
     "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    echo do_action('render_page_body', do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
 );
@@ -85,7 +80,7 @@ patch_file(
 patch_file(
     $file,
     "</head>",
-    "<" . "?php echo do_action('head', ob_get_clean()); ?" . "></head>"
+    "<" . "?php echo do_action('head', include( '/usr/local/hestia/web/pluginable.php' );ob_get_clean()); ?" . "></head>"
 );
 patch_file(
     $file,
