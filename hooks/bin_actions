@@ -1,0 +1,56 @@
+#!/bin/php
+<?php
+/**
+ * Intercept calls to Hestia's bin/ directory and invoke plugin actions/filters
+ * before executing the original command.
+ * 
+ * @version 1.0.0
+ * @license GPL-3.0
+ * @link https://github.com/steveorevo/hestiacp-pluginable
+ * 
+ */
+
+require_once( '/usr/local/hestia/web/pluginable.php' );
+
+// Remove the first argument, which is the path to the script
+$cmd = '';
+array_shift( $argv );
+
+// Check for sudo
+if ( $argv[0] == 'sudo' ) {
+    $cmd = '/usr/bin/sudo ';
+    array_shift( $argv );
+}
+
+// Reconstruct the original command
+$hst_command = array_shift( $argv );
+$cmd .= '/usr/local/hestia/bin/' . $hst_command;
+
+// Strip legacy v- prefix from command name and use underscores instead of dashes
+if ( substr( $hst_command, 0, 3 ) == '/v-' ) {
+    $hst_command = substr( $hst_command, 3 );
+}
+if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
+    $hst_command = substr( $hst_command, 2 );
+}
+$hst_command = str_replace( '-', '_', $hst_command );
+
+// Invoke any plugin pre_ actions/filters
+$argv = do_action( 'pre_' . $hst_command, $argv );
+
+// Invoke any plugin actions/filters
+$argv = do_action( $hst_command, $argv );
+
+// Pass the modified arguments to the original command
+foreach( $argv as $arg ) {
+    $cmd .= ' ' . escapeshellarg( $arg );
+}
+
+// Get the original command's output
+$output = shell_exec( $cmd );
+
+// Invoke any plugin post_ actions/filters
+$output = do_action( 'post_' . $hst_command, $output );
+
+// Return the resulting output
+echo $output;
