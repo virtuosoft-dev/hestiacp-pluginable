@@ -75,12 +75,12 @@ if ( !file_exists($file) ) {
 patch_file(
     $file,
     "<head>",
-    "<head><" . "?php ob_start(); ?" . ">"
+    "<head><" . "?php include( '/usr/local/hestia/web/pluginable.php' );ob_start(); ?" . ">"
 );
 patch_file(
     $file,
     "</head>",
-    "<" . "?php echo do_action('head', include( '/usr/local/hestia/web/pluginable.php' );ob_get_clean()); ?" . "></head>"
+    "<" . "?php echo do_action('head', ob_get_clean()); ?" . "></head>"
 );
 patch_file(
     $file,
