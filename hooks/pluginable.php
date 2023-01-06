@@ -54,6 +54,12 @@ function do_action( $tag, $args = null ) {
 $plugins_folder = '/usr/local/hestia/plugins';
 if ( !is_dir( $plugins_folder ) ) {
     mkdir( $plugins_folder );
+    file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
+    chmod( $plugins_folder . '/index.php', 0644 );
+    
+    // Make plugins accessible to web
+    $cmd = 'cd /usr/local/hestia/web && ln -s ../plugins ./plugins';
+    shell_exec( $cmd );
 }
 
 // Load any plugins

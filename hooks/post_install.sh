@@ -106,4 +106,5 @@ patch_file(
     "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
+
 do_action( 'post_install' );
