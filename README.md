@@ -50,7 +50,7 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomm
 The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 52 in pluginable.php:
 
 ```
-file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 80) . "...\n", FILE_APPEND );
+file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $arg ), 0, 80) . "...\n", FILE_APPEND );
 ```
 
 This will cause all possible hooks to be logged with a sample of the arguments in the log file at:
