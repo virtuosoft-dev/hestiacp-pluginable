@@ -2,7 +2,7 @@
 /**
  * Our Hestia Control Panel Plugin (HCPP) actions/filter API. This file furnishes a basic 
  * WordPress-like API for extending/modifying HestiaCP's functionality. This file reads the
- * /usr/local/hestia/plugins directory and loads any plugins found there. 
+ * /usr/local/hestia/web/plugins directory and loads any plugins found there. 
  * 
  * @version 1.0.0
  * @license GPL-3.0
@@ -87,15 +87,11 @@
     $hcpp = new HCPP();
 
     // Check/create plugins folder
-    $plugins_folder = '/usr/local/hestia/plugins';
+    $plugins_folder = '/usr/local/hestia/web/plugins';
     if ( !is_dir( $plugins_folder ) ) {
         mkdir( $plugins_folder );
         file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
         chmod( $plugins_folder . '/index.php', 0644 );
-        
-        // Make plugins accessible to web
-        $cmd = 'cd /usr/local/hestia/web && ln -s ../plugins ./plugins';
-        shell_exec( $cmd );
     }
 
     // Load any plugins

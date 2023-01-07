@@ -21,14 +21,14 @@ Run the post_install.sh script. This will automatically be run anytime HestiaCP 
 ```
 
 ### Creating a plugin
-Plugins live in a folder of their own name within `/usr/local/hestia/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
+Plugins live in a folder of their own name within `/usr/local/hestia/web/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
 
 ```
-/usr/local/hestia/plugins/example
+/usr/local/hestia/web/plugins/example
 ```
 and contain the file plugin.php at:
 ```
-/usr/local/hestia/plugins/example/plugin.php
+/usr/local/hestia/web/plugins/example/plugin.php
 ```
 
 A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
