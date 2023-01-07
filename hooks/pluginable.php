@@ -11,10 +11,11 @@
  */
 
  if ( ! class_exists( 'HCPP') ) {
-    public $hccp_filters = [];
-    public $hccp_filter_count = 0; 
     class HCPP {
 
+        public $hccp_filters = [];
+        public $hccp_filter_count = 0; 
+        
         /**
          * Allow us to extend the HCCP dynamically.
          */
