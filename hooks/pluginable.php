@@ -39,7 +39,7 @@ function add_action( $tag, $function_to_add, $priority = 10) {
  * @param mixed $args Optional. Arguments to pass to the functions hooked to the action/filter.
  * @return mixed The filtered value after all hooked functions are applied to it.
  */
-function do_action( $tag, $args = null ) {
+function do_action( $tag, $args = '' ) {
     //file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 50) . "...\n", FILE_APPEND );
     global $hestia_actions;
     if ( isset( $hestia_actions[$tag] ) ) {
