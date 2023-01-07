@@ -10,6 +10,8 @@ cd /tmp
 wget https://github.com/Steveorevo/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
 mv hestiacp-pluginable-main/hooks /etc/hestiacp
+rm -rf hestiacp-pluginable-main
+rm main.zip
 ```
 
 Run the post_install.sh script. This will automatically be run anytime HestiaCP updates itself. Currently, this project is compatible with HestiaCP v1.6.14.
