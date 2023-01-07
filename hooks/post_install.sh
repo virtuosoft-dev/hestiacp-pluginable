@@ -62,7 +62,7 @@ patch_file(
 patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "include(\$__template_dir . 'pages/' . \$page . '.html');",
-    "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    global \$hcpp; echo \$hcpp->do_action('render_page_body', do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
+    "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    global \$hcpp; echo \$hcpp->do_action('render_page_body', \$hcpp->do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
 );
 
 // templates/header.html
