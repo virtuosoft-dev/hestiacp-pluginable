@@ -38,16 +38,16 @@ A plugin can hook and respond to actions that HestiaCP invokes whenever an API c
 /**
  * A sample plugin for hestiacp-pluginable 
  */
-global $hccp;
-$hccp->add_action( 'list-users', function( $args ) {
+global $hcpp;
+$hcpp->add_action( 'list-users', function( $args ) {
     file_put_contents( '/tmp/hestia.log', "intercepted in test-plugin\n" . json_encode( $args, JSON_PRETTY_PRINT ) . "\n", FILE_APPEND );
     return $args;
 });
 ```
 
-It is important that an $hccp->add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like WordPress](https://developer.wordpress.org/reference/functions/add_action/).
+It is important that an $hcpp->add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like WordPress](https://developer.wordpress.org/reference/functions/add_action/).
 
-The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hccp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 52 in pluginable.php:
+The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 52 in pluginable.php:
 
 ```
 file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 80) . "...\n", FILE_APPEND );

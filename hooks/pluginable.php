@@ -13,11 +13,11 @@
  if ( ! class_exists( 'HCPP') ) {
     class HCPP {
 
-        public $hccp_filters = [];
-        public $hccp_filter_count = 0; 
+        public $hcpp_filters = [];
+        public $hcpp_filter_count = 0; 
         
         /**
-         * Allow us to extend the HCCP dynamically.
+         * Allow us to extend the HCPP dynamically.
          */
         public function __call($method, $args) {
             if (isset($this->$method)) {
@@ -35,10 +35,10 @@
          */ 
         public function add_action( $tag, $function_to_add, $priority = 10) {
             $priority = str_pad($priority, 3, '0', STR_PAD_LEFT);
-            $idx = $priority . '_' . $tag . '_' . $this->hccp_filter_count;
-            $this->hccp_filter_count++;
-            $this->hccp_filters[$tag][$idx] = $function_to_add;
-            ksort($this->hccp_filters[$tag]);
+            $idx = $priority . '_' . $tag . '_' . $this->hcpp_filter_count;
+            $this->hcpp_filter_count++;
+            $this->hcpp_filters[$tag][$idx] = $function_to_add;
+            ksort($this->hcpp_filters[$tag]);
             return true;
         }
 
@@ -51,7 +51,7 @@
          */
         public function do_action( $tag, $arg = '' ) {
             //file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 80) . "...\n", FILE_APPEND );
-            if ( ! isset( $this->hccp_filters[$tag] ) ) return $arg;
+            if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
             $args = array();
             if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
@@ -61,7 +61,7 @@
             for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
                 $args[] = func_get_arg($a);
 
-            foreach ( $this->hccp_filters[$tag] as $func ) {
+            foreach ( $this->hcpp_filters[$tag] as $func ) {
                 $arg = call_user_func_array( $func, $args );
                 if ($arg != null) {
                     $args = array();
@@ -83,8 +83,8 @@
 
     }
 
-    global $hccp;
-    $hccp = new HCPP();
+    global $hcpp;
+    $hcpp = new HCPP();
 
     // Check/create plugins folder
     $plugins_folder = '/usr/local/hestia/plugins';

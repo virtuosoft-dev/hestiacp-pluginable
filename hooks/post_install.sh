@@ -14,9 +14,9 @@
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
 require_once( '/usr/local/hestia/web/pluginable.php' );
-global $hccp;
+global $hcpp;
 
-$hccp->do_action( 'pre_patch_hestiacp' );
+$hcpp->do_action( 'pre_patch_hestiacp' );
 
 /**
  * patch_file function. 
@@ -62,7 +62,7 @@ patch_file(
 patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "include(\$__template_dir . 'pages/' . \$page . '.html');",
-    "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    echo do_action('render_page_body', do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
+    "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    global \$hcpp; echo \$hcpp->do_action('render_page_body', do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
 );
 
 // templates/header.html
@@ -82,7 +82,7 @@ patch_file(
 patch_file(
     $file,
     "</head>",
-    "<" . "?php echo do_action('head', ob_get_clean()); ?" . "></head>"
+    "<" . "?php global \$hcpp;echo \$hcpp->do_action('head', ob_get_clean()); ?" . "></head>"
 );
 patch_file(
     $file,
@@ -99,7 +99,7 @@ patch_file(
 patch_file(
     '/usr/local/hestia/web/templates/footer.html',
     "</body>",
-    "<" . "?php echo do_action('body', ob_get_clean()); ?" . "></body>"
+    "<" . "?php global \$hcpp->echo \$hcpp->do_action('body', ob_get_clean()); ?" . "></body>"
 );
 
 // api/index.php
@@ -109,4 +109,4 @@ patch_file(
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
 
-$hccp->do_action( 'post_install' );
+$hcpp->do_action( 'post_install' );
