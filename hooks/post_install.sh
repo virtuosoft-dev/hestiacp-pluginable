@@ -99,7 +99,7 @@ patch_file(
 patch_file(
     '/usr/local/hestia/web/templates/footer.html',
     "</body>",
-    "<" . "?php global \$hcpp->echo \$hcpp->do_action('body', ob_get_clean()); ?" . "></body>"
+    "<" . "?php global \$hcpp;echo \$hcpp->do_action('body', ob_get_clean()); ?" . "></body>"
 );
 
 // api/index.php
