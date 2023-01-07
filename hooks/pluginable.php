@@ -1,6 +1,6 @@
 <?php
 /**
- * Our basic plugin actions/filter API for Hestia Control Panel. This file furnishes a basic 
+ * Our Hestia Control Panel Plugin (HCPP) actions/filter API. This file furnishes a basic 
  * WordPress-like API for extending/modifying HestiaCP's functionality. This file reads the
  * /usr/local/hestia/plugins directory and loads any plugins found there. 
  * 
@@ -10,63 +10,99 @@
  * 
  */
 
-/**
- * Add a plugin action/filter
- * 
- * @param string $tag The name of the action/filter to hook the $function_to_add to.
- * @param callable $function_to_add The name of the function to be called.
- * @param int $priority Optional, default is 10. Determines the execution priority, lower occurring first.
- */ 
-function add_action( $tag, $function_to_add, $priority = 10) {
-    global $hestia_actions;
-    $priority = str_pad($priority, 3, '0', STR_PAD_LEFT);
-    if ( !isset( $hestia_actions ) ) {
-        $hestia_actions = [];
-    }
-    $count = 0;
-    if ( isset( $hestia_actions[$tag] ) ) {
-        $count = count( $hestia_actions[$tag] );
-    }
-    $idx = $priority . '_' . $tag . '_' . $count;
-    $hestia_actions[$tag][$idx] = $function_to_add;
-    ksort( $hestia_actions[$tag] );
-}
+ if ( ! class_exists( 'HCPP') ) {
+    public $hccp_filters = [];
+    public $hccp_filter_count = 0; 
+    class HCPP {
 
-/**
- * Invoke specific plugin action/filter hook.
- * 
- * @param string $tag The name of the action/filter hook.
- * @param mixed $args Optional. Arguments to pass to the functions hooked to the action/filter.
- * @return mixed The filtered value after all hooked functions are applied to it.
- */
-function do_action( $tag, $args = '' ) {
-    //file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 50) . "...\n", FILE_APPEND );
-    global $hestia_actions;
-    if ( isset( $hestia_actions[$tag] ) ) {
-        foreach( $hestia_actions[$tag] as $action ) {
-            $args = $action( $args );
+        /**
+         * Allow us to extend the HCCP dynamically.
+         */
+        public function __call($method, $args) {
+            if (isset($this->$method)) {
+                $func = $this->$method;
+                return call_user_func_array($func, $args);
+            }
         }
+
+        /**
+         * Add a plugin action/filter
+         * 
+         * @param string $tag The name of the action/filter to hook the $function_to_add to.
+         * @param callable $function_to_add The name of the function to be called.
+         * @param int $priority Optional, default is 10. Determines the execution priority, lower occurring first.
+         */ 
+        public function add_action( $tag, $function_to_add, $priority = 10) {
+            $priority = str_pad($priority, 3, '0', STR_PAD_LEFT);
+            $idx = $priority . '_' . $tag . '_' . $this->hccp_filter_count;
+            $this->hccp_filter_count++;
+            $this->hccp_filters[$tag][$idx] = $function_to_add;
+            ksort($this->hccp_filters[$tag]);
+            return true;
+        }
+
+        /**
+         * Invoke specific plugin action/filter hook.
+         * 
+         * @param string $tag The name of the action/filter hook.
+         * @param mixed $arg Optional. Arguments to pass to the functions hooked to the action/filter.
+         * @return mixed The filtered value after all hooked functions are applied to it.
+         */
+        public function do_action( $tag, $arg = '' ) {
+            //file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $args ), 0, 80) . "...\n", FILE_APPEND );
+            if ( ! isset( $this->hccp_filters[$tag] ) ) return $arg;
+
+            $args = array();
+            if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
+                $args[] =& $arg[0];
+            else
+                $args[] = $arg;
+            for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
+                $args[] = func_get_arg($a);
+
+            foreach ( $this->hccp_filters[$tag] as $func ) {
+                $arg = call_user_func_array( $func, $args );
+                if ($arg != null) {
+                    $args = array();
+                    if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
+                        $args[] =& $arg[0];
+                    else
+                        $args[] = $arg;
+                    for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
+                        $args[] = func_get_arg($a);
+                }
+            }
+            if (is_array($args) && 1 == count($args)) {
+                return $args[0];
+            }else{
+                return $args;
+            }
+        }
+
+
     }
-    return $args;
-}
 
-// Check/create plugins folder
-$plugins_folder = '/usr/local/hestia/plugins';
-if ( !is_dir( $plugins_folder ) ) {
-    mkdir( $plugins_folder );
-    file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
-    chmod( $plugins_folder . '/index.php', 0644 );
-    
-    // Make plugins accessible to web
-    $cmd = 'cd /usr/local/hestia/web && ln -s ../plugins ./plugins';
-    shell_exec( $cmd );
-}
+    global $hccp;
+    $hccp = new HCPP();
 
-// Load any plugins
-$plugins = glob( $plugins_folder . '/*' );
-foreach($plugins as $p) {
-    $plugin_file = $p . '/plugin.php';
-    if ( file_exists( $plugin_file ) ) {
-        require_once( $plugin_file );
+    // Check/create plugins folder
+    $plugins_folder = '/usr/local/hestia/plugins';
+    if ( !is_dir( $plugins_folder ) ) {
+        mkdir( $plugins_folder );
+        file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
+        chmod( $plugins_folder . '/index.php', 0644 );
+        
+        // Make plugins accessible to web
+        $cmd = 'cd /usr/local/hestia/web && ln -s ../plugins ./plugins';
+        shell_exec( $cmd );
+    }
+
+    // Load any plugins
+    $plugins = glob( $plugins_folder . '/*' );
+    foreach($plugins as $p) {
+        $plugin_file = $p . '/plugin.php';
+        if ( file_exists( $plugin_file ) ) {
+            require_once( $plugin_file );
+        }
     }
 }

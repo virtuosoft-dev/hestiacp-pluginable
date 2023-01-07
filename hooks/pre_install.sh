@@ -10,4 +10,4 @@
  */
 
 require_once( '/usr/local/hestia/web/pluginable.php' );
-do_action( 'pre_install' );
+$hccp->do_action( 'pre_install' );

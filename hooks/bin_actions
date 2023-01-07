@@ -11,6 +11,7 @@
  */
 
 require_once( '/usr/local/hestia/web/pluginable.php' );
+global $hccp; 
 
 // Remove the first argument, which is the path to the script
 $cmd = '';
@@ -36,10 +37,10 @@ if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
 $hst_command = str_replace( '-', '_', $hst_command );
 
 // Invoke any plugin pre_ actions/filters
-$argv = do_action( 'pre_' . $hst_command, $argv );
+$argv = $hccp->do_action( 'pre_' . $hst_command, $argv );
 
 // Invoke any plugin actions/filters
-$argv = do_action( $hst_command, $argv );
+$argv = $hccp->do_action( $hst_command, $argv );
 
 // Pass the modified arguments to the original command
 foreach( $argv as $arg ) {
@@ -50,7 +51,7 @@ foreach( $argv as $arg ) {
 $output = shell_exec( $cmd );
 
 // Invoke any plugin post_ actions/filters
-$output = do_action( 'post_' . $hst_command, $output );
+$output = $hccp->do_action( 'post_' . $hst_command, $output );
 
 // Return the resulting output
 echo $output;

@@ -14,7 +14,9 @@
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
 require_once( '/usr/local/hestia/web/pluginable.php' );
-do_action( 'pre_patch_hestiacp' );
+global $hccp;
+
+$hccp->do_action( 'pre_patch_hestiacp' );
 
 /**
  * patch_file function. 
@@ -107,4 +109,4 @@ patch_file(
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
 
-do_action( 'post_install' );
+$hccp->do_action( 'post_install' );
