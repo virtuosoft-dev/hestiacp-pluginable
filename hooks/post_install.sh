@@ -42,6 +42,11 @@ function patch_file( $file, $search, $replace ) {
 // domain.sh
 patch_file( 
     '/usr/local/hestia/func/domain.sh',
+    'if [[ $backend_template =~ ^.*PHP-([0-9])\_([0-9])$ ]]; then',
+    'if [[ $backend_template =~ ^.*PHP-([0-9])\_([0-9])(.*)$ ]]; then'
+);
+patch_file( 
+    '/usr/local/hestia/func/domain.sh',
     '${BASH_REMATCH[1]}.${BASH_REMATCH[2]}',
     '${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}'
 );
