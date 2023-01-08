@@ -80,7 +80,26 @@
             }
         }
 
-
+        /**
+         * Execute and API command and return JSON if applicable.
+         * 
+         * @param string $cmd The API command to execute along with it's arguments; the 'v-' prefix is optional.
+         * @return mixed The output of the command; automatically returns JSON decoded if applicable.
+         */
+        public function execute( $cmd ) {
+            if ( file_exists( '/usr/local/hestia/bin/v-' . strtok( $cmd, " " ) ) ) {
+                $cmd = '/etc/hestiacp/hooks/bin_actions ' . 'v-' . $cmd;
+            }
+            if ( file_exists( '/usr/local/hestia/bin/' . strtok( $cmd, " " ) ) ) {
+                $cmd = '/etc/hestiacp/hooks/bin_actions ' . $cmd;
+            }
+            $output = shell_exec( $cmd );
+            if ( strpos( $cmd, ' json') !== false ) {
+                return json_decode( $output, true );
+            }else{
+                return $output;
+            }
+        }
     }
 
     global $hcpp;
