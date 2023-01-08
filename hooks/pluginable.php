@@ -81,7 +81,7 @@
         }
 
         /**
-         * Run and API command and return JSON if applicable.
+         * Run an API command and return JSON if applicable.
          * 
          * @param string $cmd The API command to execute along with it's arguments; the 'v-' prefix is optional.
          * @return mixed The output of the command; automatically returns JSON decoded if applicable.
