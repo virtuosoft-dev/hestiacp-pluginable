@@ -114,6 +114,7 @@
             $msg = ob_get_clean(); 
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             file_put_contents('/tmp/hestia.log', $t . ' ' . $msg . PHP_EOL, FILE_APPEND);
+            chmod( '/tmp/hestia.log', 0666 );
         }
     }
 
