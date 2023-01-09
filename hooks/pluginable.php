@@ -51,7 +51,7 @@
          * @return mixed The filtered value after all hooked functions are applied to it.
          */
         public function do_action( $tag, $arg = '' ) {
-            //file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $arg ), 0, 80) . "...\n", FILE_APPEND );
+            $this->debug( 'do action ' . $tag );$this->debug( $arg );
             if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
             $args = array();
