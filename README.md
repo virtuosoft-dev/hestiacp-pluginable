@@ -40,23 +40,34 @@ A plugin can hook and respond to actions that HestiaCP invokes whenever an API c
  */
 global $hcpp;
 $hcpp->add_action( 'list-users', function( $args ) {
-    file_put_contents( '/tmp/hestia.log', "intercepted in test-plugin\n" . json_encode( $args, JSON_PRETTY_PRINT ) . "\n", FILE_APPEND );
+
+    global $hcpp;
+    $hcpp->debugging = true;
+    $hcpp->debug( "intercepted in test-plugin\n" . json_encode( $args, JSON_PRETTY_PRINT ) . "\n", FILE_APPEND );
     return $args;
+
 });
 ```
 
 It is important that an $hcpp->add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like WordPress](https://developer.wordpress.org/reference/functions/add_action/).
 
-The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by uncommenting line 52 in pluginable.php:
+The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by editing line 18 of `/usr/local/hestia/web/pluginable.php`:
 
 ```
-file_put_contents( '/tmp/hestia.log', "add_action " . $tag . " " . substr(json_encode( $arg ), 0, 80) . "...\n", FILE_APPEND );
+    public $debugging = true;
 ```
 
-This will cause all possible hooks to be logged with a sample of the arguments in the log file at:
-`/tmp/hestia.log`. Be sure to re-run the post_install.sh script if you modify the pluginable.php file; as described at the top of this document in the installation section. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/tmp/hestia.log` file:
+This will cause all possible hooks to be logged with the arguments in the log file at:
+`/tmp/hestia.log`. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/tmp/hestia.log` file:
 
 ```
 cat /tmp/hestia.log
+```
+
+Lastly, you can run any of HestiaCP's API commands using the HCPP object's `run` method. For example, the following code will return a JSON object of all the users:
+
+```
+global $hcpp;
+$all_users = $hcpp->run('list-users');
 ```
 

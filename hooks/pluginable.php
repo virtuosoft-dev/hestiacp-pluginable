@@ -14,7 +14,8 @@
     class HCPP {
 
         public $hcpp_filters = [];
-        public $hcpp_filter_count = 0; 
+        public $hcpp_filter_count = 0;
+        public $debugging = false; 
         
         /**
          * Allow us to extend the HCPP dynamically.
@@ -99,6 +100,20 @@
             }else{
                 return $output;
             }
+        }
+
+        /**
+         * Write a debug message to the HestiaCP log.
+         * 
+         * @param mixed $msg The message or object to write to the log.
+         */
+        public function debug($msg) {
+            if ( $this->debugging == false ) return;
+            ob_start();
+            var_dump($msg);
+            $msg = ob_get_clean(); 
+            $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
+            file_put_contents('/tmp/hestia.log', $t . ' ' . $msg . PHP_EOL, FILE_APPEND);
         }
     }
 
