@@ -42,8 +42,8 @@ global $hcpp;
 $hcpp->add_action( 'list-users', function( $args ) {
 
     global $hcpp;
-    $hcpp->debugging = true;
-    $hcpp->debug( "intercepted in test-plugin\n" . json_encode( $args, JSON_PRETTY_PRINT ) . "\n", FILE_APPEND );
+    $hcpp->logging = true;
+    $hcpp->log( "intercepted in test-plugin\n" . json_encode( $args, JSON_PRETTY_PRINT ) . "\n", FILE_APPEND );
     return $args;
 
 });
@@ -54,7 +54,7 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomm
 The above sample plugin will write the response to `/tmp/hestia.log`. Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. You can view all the possible hook names that the hestiacp-pluginable API can respond to by editing line 18 of `/usr/local/hestia/web/pluginable.php`:
 
 ```
-    public $debugging = true;
+    public $logging = true;
 ```
 
 This will cause all possible hooks to be logged with the arguments in the log file at:

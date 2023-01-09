@@ -15,7 +15,7 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $debugging = false; 
+        public $logging = false; 
         
         /**
          * Allow us to extend the HCPP dynamically.
@@ -51,7 +51,7 @@
          * @return mixed The filtered value after all hooked functions are applied to it.
          */
         public function do_action( $tag, $arg = '' ) {
-            $this->debug( 'do action ' . $tag );$this->debug( $arg );
+            $this->log( 'do action ' . $tag );$this->log( $arg );
             if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
             $args = array();
@@ -103,12 +103,12 @@
         }
 
         /**
-         * Write a debug message to the HestiaCP log.
+         * Write a log message to the HestiaCP log.
          * 
          * @param mixed $msg The message or object to write to the log.
          */
-        public function debug($msg) {
-            if ( $this->debugging == false ) return;
+        public function log($msg) {
+            if ( $this->logging == false ) return;
             ob_start();
             var_dump($msg);
             $msg = ob_get_clean(); 
