@@ -14,27 +14,13 @@ require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp; 
 
 // Remove the first argument, which is the path to the script
-$hcpp->log( $argv );
 $cmd = '';
 array_shift( $argv );
 
 // Check for sudo
 if ( $argv[0] == 'sudo' ) {
+    $cmd = '/usr/bin/sudo ';
     array_shift( $argv );
-
-    // Restart ourself under sudo
-    $cmd = '/usr/bin/sudo /etc/hestiacp/hooks/bin_actions ';
-    $hst_command = array_shift( $argv );
-    $cmd .= $hst_command;
-
-    // Pass the rest of the args along
-    foreach( $argv as $arg ) {
-        $cmd .= ' ' . escapeshellarg( $arg );
-    }
-
-    // Return the output
-    echo shell_exec( $cmd );
-    exit();
 }
 
 // Reconstruct the original command
@@ -69,4 +55,3 @@ $output = $hcpp->do_action( 'post_' . $hst_command, $output );
 
 // Return the resulting output
 echo $output;
-
