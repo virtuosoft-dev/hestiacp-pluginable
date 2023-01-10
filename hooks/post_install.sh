@@ -57,6 +57,11 @@ patch_file(
     'BIN=$HESTIA/bin',
     'BIN="/etc/hestiacp/hooks/bin_actions "'
 );
+patch_file(
+    '/usr/local/hestia/func/main.sh',
+    '# Internal variables',
+    'PARENT=$(ps -o args= $PPID);echo $PARENT | /etc/hestiacp/hooks/priv_actions' . "\n# Internal variables"
+);
 
 // inc/main.php
 patch_file(
