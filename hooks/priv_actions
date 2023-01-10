@@ -13,45 +13,43 @@
 require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp; 
 
-// // Remove the first argument, which is the path to the script
-// $cmd = '';
-// array_shift( $argv );
+// Remove the first argument, which is the path to the script
+$cmd = '';
+array_shift( $argv );
 
-// // Check for sudo
-// if ( $argv[0] == 'sudo' ) {
-//     $cmd = '/usr/bin/sudo ';
-//     array_shift( $argv );
-// }
+// Analyze the arguments
+$is_priv = false;
+$hst_command = '';
+$params = [];
+foreach( $argv as $a) {
 
-// // Reconstruct the original command
-// $hst_command = array_shift( $argv );
-// $cmd .= '/usr/local/hestia/bin/' . $hst_command;
+    // Check for sudo
+    if ($a == 'sudo' || $a == '/usr/bin/sudo') {
+        $is_priv = true;
+    }else{
 
-// // Strip legacy v- prefix from command name and use underscores instead of dashes
-// if ( substr( $hst_command, 0, 3 ) == '/v-' ) {
-//     $hst_command = substr( $hst_command, 3 );
-// }
-// if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
-//     $hst_command = substr( $hst_command, 2 );
-// }
-// $hst_command = str_replace( '-', '_', $hst_command );
+        // Get the original command name
+        if ( strpos( $a, '/usr/local/hestia/bin/' ) !== false ) {
+            $hst_command = str_replace( '/usr/local/hestia/bin/', '', $a );
+        }else{
+            $params[] = $a;
+        }
+    }
+}
+if ( $is_priv == false || $hst_command == '' ) return;
 
-// // Invoke any plugin pre_ actions/filters
-// $argv = $hcpp->do_action( 'pre_' . $hst_command, $argv );
+// Strip legacy v- prefix from command name and use underscores instead of dashes
+if ( substr( $hst_command, 0, 3 ) == '/v-' ) {
+    $hst_command = substr( $hst_command, 3 );
+}
+if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
+    $hst_command = substr( $hst_command, 2 );
+}
+$hst_command = 'priv_' . str_replace( '-', '_', $hst_command );
 
-// // Invoke any plugin actions/filters
-// $argv = $hcpp->do_action( $hst_command, $argv );
-
-// // Pass the modified arguments to the original command
-// foreach( $argv as $arg ) {
-//     $cmd .= ' ' . escapeshellarg( $arg );
-// }
-
-// // Get the original command's output
-// $output = shell_exec( $cmd );
-
-// // Invoke any plugin post_ actions/filters
-// $output = $hcpp->do_action( 'post_' . $hst_command, $output );
-
-// // Return the resulting output
-// echo $output;
+// Invoke any plugin actions
+if (count( $params ) > 0) {
+    $hcpp->do_action( $hst_command, $params );
+}else{
+    $hcpp->do_action( $hst_command, '' );
+}

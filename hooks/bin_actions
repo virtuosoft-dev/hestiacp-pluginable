@@ -36,11 +36,8 @@ if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
 }
 $hst_command = str_replace( '-', '_', $hst_command );
 
-// Invoke any plugin pre_ actions/filters
+// Invoke any plugin pre_ filters
 $argv = $hcpp->do_action( 'pre_' . $hst_command, $argv );
-
-// Invoke any plugin actions/filters
-$argv = $hcpp->do_action( $hst_command, $argv );
 
 // Pass the modified arguments to the original command
 foreach( $argv as $arg ) {
@@ -50,7 +47,7 @@ foreach( $argv as $arg ) {
 // Get the original command's output
 $output = shell_exec( $cmd );
 
-// Invoke any plugin post_ actions/filters
+// Invoke any plugin post_ filters
 $output = $hcpp->do_action( 'post_' . $hst_command, $output );
 
 // Return the resulting output
