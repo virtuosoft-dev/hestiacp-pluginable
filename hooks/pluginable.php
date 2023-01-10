@@ -51,7 +51,7 @@
          * @return mixed The filtered value after all hooked functions are applied to it.
          */
         public function do_action( $tag, $arg = '' ) {
-            $this->log( 'do action ' . $tag );$this->log( $arg );
+            $this->log( 'do action as ' . trim( shell_exec( 'whomai' ) ) . ', ' . $tag );$this->log( $arg );
             if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
             $args = array();
