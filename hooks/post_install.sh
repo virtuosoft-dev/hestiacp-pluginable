@@ -60,7 +60,7 @@ patch_file(
 patch_file(
     '/usr/local/hestia/func/main.sh',
     '# Internal variables',
-    'PARENT=$(ps -o args= $PPID);/etc/hestiacp/hooks/priv_actions $PARENT'
+    '# Internal variables' . "\n" . 'PARENT=$(ps -o args= $PPID);/etc/hestiacp/hooks/priv_actions $PARENT'
 );
 
 // inc/main.php
