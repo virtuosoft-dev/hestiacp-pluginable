@@ -109,14 +109,14 @@
          */
         public function log($msg) {
             if ( $this->logging == false ) return;
-            ob_start();
-            var_dump($msg);
-            $msg = ob_get_clean(); 
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
-            file_put_contents('/tmp/hestia.log', $t . ' ' . $msg . PHP_EOL, FILE_APPEND);
-            chmod( '/tmp/hestia.log', 0666 );
-            chown( '/tmp/hestia.log', 'root' );
-            chgrp( '/tmp/hestia.log', 'root' );
+            $msg = json_encode( $msg, JSON_PRETTY_PRINT );
+            error_log( $t . ' ' . substr( $msg, 0, 80 ) . "\n", 3, '/tmp/hestia.log' );
+            try {
+                chmod( '/tmp/hestia.log', 0666 );
+            } catch (Exception $e) {
+                // Do nothing
+            }
         }
     }
 
