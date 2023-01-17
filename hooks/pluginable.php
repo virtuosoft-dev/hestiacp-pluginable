@@ -111,9 +111,9 @@
             if ( $this->logging == false ) return;
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
-            error_log( $t . ' ' . substr( $msg, 0, 80 ) . "\n", 3, '/tmp/hestia.log' );
+            error_log( $t . ' ' . substr( $msg, 0, 80 ) . "\n", 3, '/var/log/hestia/hestiacp-pluginable.log' );
             try {
-                chmod( '/tmp/hestia.log', 0666 );
+                chmod( '/var/log/hestia/hestiacp-pluginable.log', 0666 );
             } catch (Exception $e) {
                 // Do nothing
             }

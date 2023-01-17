@@ -119,4 +119,9 @@ patch_file(
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
 
+// Ensure log is writable when needed
+if ( ! is_writable( '/var/log/hestia/hestiacp-pluginable.log' ) ) {
+    chmod( '/var/log/hestia/hestiacp-pluginable.log', 0666 );
+}
+
 $hcpp->do_action( 'post_install' );
