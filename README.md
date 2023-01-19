@@ -1,7 +1,7 @@
 # hestiacp-pluginable
 Extend Hestia Control Panel via a simple, WordPress-like plugins API.
 
-> !!! Note: this repo is in progress; when completed, a version 1.0.0 will be released in the releases tab.
+> :warning: !!! Note: this repo is in progress; when completed, a release will appear in the release tab.
 
 ### Installation
 Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks as root user:
