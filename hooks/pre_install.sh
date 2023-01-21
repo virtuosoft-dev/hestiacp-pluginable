@@ -1,7 +1,7 @@
 #!/bin/php
 <?php
 /**
- * PInvoke any plugins that wish to intercept pre_install hook.
+ * Invoke any plugins that wish to intercept pre_install hook.
  *
  * @version 1.0.0
  * @license GPL-3.0

@@ -13,6 +13,17 @@
 // Copy pluginable.php to /usr/local/hestia/web/pluginable.php
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
+// Copy prepend/append/pluginable system to /opt/hestiacp-pluginable
+if ( !file_exists( '/opt/hestiacp-pluginable' ) ) {
+    mkdir( '/opt/hestiacp-pluginable' );
+}
+copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hestiacp-pluginable/prepend.php' );
+copy( '/etc/hestiacp/hooks/append.php', '/opt/hestiacp-pluginable/append.php' );
+
+// Copy v-invoke-plugin to /usr/local/hestia/bin to allow invocation from API
+copy( '/etc/hestiacp/hooks/v-invoke-plugin', '/usr/local/hestia/bin/v-invoke-plugin' );
+chmod( '/usr/local/hestia/bin/v-invoke-plugin', 0755 );
+
 require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp;
 
@@ -37,7 +48,26 @@ function patch_file( $file, $search, $replace ) {
     }
 }
 
-// Patch Hestia files to support plugins
+// Patch Hestia templates php-fpm templates ..templates/web/php-fpm/*.tpl
+$folderPath = "/usr/local/hestia/data/templates/web/php-fpm";
+$extension = "tpl";
+$files = glob( "$folderPath/*.$extension" );
+foreach( $files as $file ) {
+
+    // Patch php-fpm templates open_basedir to include /usr/local/hestia/web/plugins
+    patch_file( 
+        $file,
+        "\nphp_admin_value[open_basedir] =",
+        "\nphp_admin_value[open_basedir] = /home/%user%/.composer:/home/%user%/web/%domain%/public_html:/home/%user%/web/%domain%/private:/home/%user%/web/%domain%/public_shtml:/home/%user%/tmp:/tmp:/var/www/html:/bin:/usr/bin:/usr/local/bin:/usr/share:/opt:/usr/local/hestia/web/plugins\n;php_admin_value[open_basedir] ="
+    );
+
+    // Patch php-fpm templates to support plugins prepend/append system
+    patch_file( 
+        $file,
+        "\nphp_admin_value[open_basedir] =",
+        "\nphp_admin_value[auto_prepend_file] = /opt/hestiacp-pluginable/prepend.php\n\nphp_admin_value[auto_append_file] = /opt/hestiacp-pluginable/append.php\nphp_admin_value[open_basedir] ="
+    );
+}
 
 // domain.sh
 patch_file( 
@@ -119,9 +149,10 @@ patch_file(
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
 
-// Ensure log is writable when needed
-if ( ! is_writable( '/var/log/hestia/hestiacp-pluginable.log' ) ) {
-    chmod( '/var/log/hestia/hestiacp-pluginable.log', 0666 );
+// Ensure log is present and writable when needed
+if ( ! file_exists( '/var/log/hestia/pluginable.log' ) ) {
+    touch( '/var/log/hestia/pluginable.log' );
+    chmod( '/var/log/hestia/pluginable.log', 0666 );
 }
 
 $hcpp->do_action( 'post_install' );
