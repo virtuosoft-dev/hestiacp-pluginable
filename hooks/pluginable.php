@@ -15,7 +15,9 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = false; 
+        public $logging = false;
+        public $folder_ports = '/opt/hestia-pluginable/ports';
+        public $start_port = 50000;
         
         /**
          * Allow us to extend the HCPP dynamically.
@@ -41,6 +43,156 @@
             $this->hcpp_filters[$tag][$idx] = $function_to_add;
             ksort($this->hcpp_filters[$tag]);
             return true;
+        }
+
+        /**
+         * Allocate a unique port number for a service.
+         * 
+         * @param string $name The name of the service to allocate a port for.
+         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
+         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
+         * @return int The port number allocated.
+         */
+        public function allocate_port( $name, $type = 'domain', $id = '' ) {
+    
+            // Check for existing port
+            $port = $this->get_port( $name, $type, $id );
+            if ( $port == 0 ) {
+                $port = $this->find_next_port();
+
+                // Determine which ports file to update
+                switch( $type ) {
+                    case 'system':
+                        $file = "$this->folder_ports/system.ports";
+                        break;
+                    case 'user':
+                        $file = "$this->folder_ports/user-$id.ports";
+                        break;
+                    default:
+                        $file = "$this->folder_ports/domain-$id.ports";
+                }
+
+                // Update the ports folder with the ports file
+                file_put_contents( $file, "set \$$name $port;\n", FILE_APPEND );
+            }
+            return $port;
+        }       
+
+        /**
+         * Delete a service port allocation.
+         * 
+         * @param string $name The name of the service to delete the port allocation for.
+         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
+         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
+         */
+        public function delete_port( $name, $type = 'domain', $id = '' ) {
+
+            // Exit if ports folder doesn't exist
+            if ( !is_dir( $this->folder_ports ) ) {
+                return;
+            }
+
+            // Determine which ports file to update
+            switch( $type ) {
+                case 'system':
+                    $file = "$this->folder_ports/system.ports";
+                    break;
+                case 'user':
+                    $file = "$this->folder_ports/user-$id.ports";
+                    break;
+                default:
+                    $file = "$this->folder_ports/domain-$id.ports";
+            }
+
+            // Check for existing ports file
+            if ( !file_exists( $file ) ) {
+                return;
+            }
+
+            // Update the file, removing the port allocation
+            $new_content = "";
+            $content = file_get_contents( $file );
+            $content = explode( "\n", $content );
+            foreach( $content as $line ) {
+                if ( strpos( $line, "set $name " ) === false ) {
+                    $new_content .= "$line\n";
+                }
+            }
+            file_put_contents( $file, $new_content );
+        }
+
+        /**
+         * Get the port number allocated to a service.
+         * 
+         * @param string $name The name of the service to get the port for.
+         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
+         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
+         * @return int The port number allocated or zero if not found.
+         */
+        public function get_port( $name, $type = 'domain', $id = '' ) {
+            
+            // Create ports folder if it doesn't exist
+            if ( !is_dir( $this->folder_ports ) ) {
+                mkdir( $this->folder_ports, 0755, true );
+            }
+            
+            // Determine which ports file to update
+            switch( $type ) {
+                case 'system':
+                    $file = "$this->folder_ports/system.ports";
+                    break;
+                case 'user':
+                    $file = "$this->folder_ports/user-$id.ports";
+                    break;
+                default:
+                    $file = "$this->folder_ports/domain-$id.ports";
+            }
+
+            // Check for existing port
+            $port = 0;
+            if ( file_exists( $file ) ) {
+                $content = file_get_contents( $file );
+                $content = explode( "\n", $content );
+                foreach( $content as $line ) {
+                    $parse = explode( ' ', $line );
+                    if ( isset( $parse[1] ) && $parse[1] == "\$$name" ) {
+                        $port = intval( $parse[2] );
+                        break;
+                    }
+                }
+            }
+            return $port;
+        }
+
+        /**
+         * Find the next unique service port number. 
+         * 
+         * @return int The next available port number. 
+         */
+        private function find_next_port() {
+
+            // Read existing nginx port files
+            $files = glob( "$this->folder_ports/*.ports" );
+            $used_ports = [];
+            foreach( $files as $file ) {
+                $content = file_get_contents( $file );
+                $content = explode( "\n", $content );
+
+                // Gather all port numbers
+                foreach( $content as $line ) {
+                    $parse = explode( ' ', $line );
+                    if ( isset( $parse[2] ) ) {
+                        $used_ports[] = intval( $parse[2] );
+                    }
+                }
+            }
+
+            // Find first available port from starting port
+            $port = $this->start_port;
+            while( in_array( $port, $used_ports ) ) {
+                $port++;
+            }
+            return $port;
         }
 
         /**

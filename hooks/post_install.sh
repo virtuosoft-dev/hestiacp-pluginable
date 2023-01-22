@@ -14,7 +14,7 @@
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
 // Copy prepend/append/pluginable system to /opt/hestiacp-pluginable
-if ( !file_exists( '/opt/hestiacp-pluginable' ) ) {
+if ( !is_dir( '/opt/hestiacp-pluginable' ) ) {
     mkdir( '/opt/hestiacp-pluginable' );
 }
 copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hestiacp-pluginable/prepend.php' );
