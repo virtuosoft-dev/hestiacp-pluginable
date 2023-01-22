@@ -46,35 +46,50 @@
         }
 
         /**
-         * Allocate a unique port number for a service.
+         * Allocate a unique port number for a service. This function will check for an existing port allocation.
+         * If one is found, it will be returned. If not, a new port will be allocated and returned. If neither
+         * user nor domain is specified, the port will be allocated for the system; otherwise, if only user is
+         * specified, the port will be allocated for the user; if domain is specified, the port will be allocated
+         * specifically for the domain (user required for domain option).
          * 
          * @param string $name The name of the service to allocate a port for.
-         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
-         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
-         * @return int The port number allocated.
+         * @param string $user The optional username to allocate the port for.
+         * @param string $domain The optional domain to allocate the port for.
+         * @return int The port number allocated or zero if an error occurred.
          */
-        public function allocate_port( $name, $type = 'domain', $id = '' ) {
+        public function allocate_port( $name, $user = '', $domain = '' ) {
     
             // Check for existing port
-            $port = $this->get_port( $name, $type, $id );
-            if ( $port == 0 ) {
-                $port = $this->find_next_port();
+            $port = $this->get_port( $name, $user, $domain );
 
-                // Determine which ports file to update
-                switch( $type ) {
-                    case 'system':
-                        $file = "$this->folder_ports/system.ports";
-                        break;
-                    case 'user':
-                        $file = "$this->folder_ports/user-$id.ports";
-                        break;
-                    default:
-                        $file = "$this->folder_ports/domain-$id.ports";
-                }
-
-                // Update the ports folder with the ports file
-                file_put_contents( $file, "set \$$name $port;\n", FILE_APPEND );
+            // Return existing port
+            if ( $port != 0 ) {
+                return $port;
             }
+
+            // Determine which ports file to update
+            $file = '';
+            if ( $user == '' && $domain == '' ) { // System port
+                $file = "$this->folder_ports/system.ports";
+            }
+            if ( $user != '' && $domain == '' ) { // User port
+                $file = "$this->folder_ports/$user/user.ports";
+            }
+            if ( $user != '' && $domain != '' ) { // Domain port
+                $file = "$this->folder_ports/$user/$domain.ports";
+            }
+            if ( $file == '' ) {
+                return 0;
+            }
+
+            // Create the ports folder if it doesn't exist
+            if ( !is_dir( dirname( $file ) ) ) {
+                mkdir( $file, 0755, true );
+            }
+
+            // Update the ports file with the next available port
+            $port = $this->find_next_port();
+            file_put_contents( $file, "set \$$name $port;\n", FILE_APPEND );
             return $port;
         }       
 
@@ -82,27 +97,30 @@
          * Delete a service port allocation.
          * 
          * @param string $name The name of the service to delete the port allocation for.
-         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
-         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
+         * @param string $user The optional username to delete the port for; if blank, the system port will be deleted.
+         * @param string $domain The optional domain to delete the port for (requires $user); if blank, the user port will be deleted.
          */
-        public function delete_port( $name, $type = 'domain', $id = '' ) {
+        public function delete_port( $name, $user = '', $domain = '' ) {
 
             // Exit if ports folder doesn't exist
             if ( !is_dir( $this->folder_ports ) ) {
                 return;
             }
 
-            // Determine which ports file to update
-            switch( $type ) {
-                case 'system':
-                    $file = "$this->folder_ports/system.ports";
-                    break;
-                case 'user':
-                    $file = "$this->folder_ports/user-$id.ports";
-                    break;
-                default:
-                    $file = "$this->folder_ports/domain-$id.ports";
-            }
+           // Determine which ports file to update
+           $file = '';
+           if ( $user == '' && $domain == '' ) { // System port
+               $file = "$this->folder_ports/system.ports";
+           }
+           if ( $user != '' && $domain == '' ) { // User port
+               $file = "$this->folder_ports/$user/user.ports";
+           }
+           if ( $user != '' && $domain != '' ) { // Domain port
+               $file = "$this->folder_ports/$user/$domain.ports";
+           }
+           if ( $file == '' ) {
+               return 0;
+           }
 
             // Check for existing ports file
             if ( !file_exists( $file ) ) {
@@ -125,27 +143,31 @@
          * Get the port number allocated to a service.
          * 
          * @param string $name The name of the service to get the port for.
-         * @param string $type The type of service; 'domain' (default), 'user', or 'system'.
-         * @param string $id The username or domain name to delete the port allocation for (only used if $type is 'user' or 'domain').
+         * @param string $user The optional username to obtain the port for; if blank, the system port will be returned.
+         * @param string $domain The optional domain to obtain the port for (requires $user); if blank, the user port will be returned.
          * @return int The port number allocated or zero if not found.
          */
-        public function get_port( $name, $type = 'domain', $id = '' ) {
-            
+        public function get_port( $name, $user = '', $domain = '' ) {
+
             // Create ports folder if it doesn't exist
             if ( !is_dir( $this->folder_ports ) ) {
                 mkdir( $this->folder_ports, 0755, true );
+                return 0;
             }
             
-            // Determine which ports file to update
-            switch( $type ) {
-                case 'system':
-                    $file = "$this->folder_ports/system.ports";
-                    break;
-                case 'user':
-                    $file = "$this->folder_ports/user-$id.ports";
-                    break;
-                default:
-                    $file = "$this->folder_ports/domain-$id.ports";
+            // Determine which ports file to read
+            $file = '';
+            if ( $user == '' && $domain == '' ) { // System port
+                $file = "$this->folder_ports/system.ports";
+            }
+            if ( $user != '' && $domain == '' ) { // User port
+                $file = "$this->folder_ports/$user/user.ports";
+            }
+            if ( $user != '' && $domain != '' ) { // Domain port
+                $file = "$this->folder_ports/$user/$domain.ports";
+            }
+            if ( $file == '' ) {
+                return 0;
             }
 
             // Check for existing port
@@ -171,8 +193,17 @@
          */
         private function find_next_port() {
 
-            // Read existing nginx port files
-            $files = glob( "$this->folder_ports/*.ports" );
+            // Get list of existing Nginx port files
+            $files = array();
+            $iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $this->folder_ports ) );
+            foreach( $iterator as $file ) {
+                if ( !$file->isDir() && strpos( $file->getFilename(), 'prepend' ) === 0 && $file->getExtension() == 'ports' ) {
+                    $fileKey = pathinfo( $file->getFilename(), PATHINFO_FILENAME );
+                    $fileArray[$fileKey] = $file->getPathname();
+                }
+            }
+
+            // Read all port numbers from files
             $used_ports = [];
             foreach( $files as $file ) {
                 $content = file_get_contents( $file );
