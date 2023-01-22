@@ -61,7 +61,7 @@ $hcpp->add_action( 'list-users', function( $args ) {
 });
 ```
 
-It is important that an $hcpp->add_action hook returns (passes along) the incomming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
+It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
 
 The above sample plugin will write the arguments to `/var/log/hestia/pluginable.log` (if logging is on, see 'Debug Logging' below). 
 
@@ -88,10 +88,10 @@ truncate -s 0 /var/log/hestia/pluginable.log
 ```
 
 ### Invoking Plugins via Hestia API
-Plugins also have the ability to execute code on behalf of invoking Hestia's API. An additional bin file called `v-invoke-plugin` can take an arbituary number of arguments and will in turn execute the `invoke_plugin` action. A plugin author can subscribe to this message and execute custom code. Results can be returned, altering any values passed to other subscribers; or an author can echo results back to the caller as clear text or optionally, as JSON (or as JSON if an argument contains the string `json` as by convention like other Hestia API bin commands).
+Plugins also have the ability to execute code on behalf of invoking Hestia's API. An additional bin file called `v-invoke-plugin` can take an arbitrary number of arguments and will in turn execute the `invoke_plugin` action. A plugin author can subscribe to this message and execute custom code. Results can be returned, altering any values passed to other subscribers; or an author can echo results back to the caller as clear text or optionally, as JSON (or as JSON if an argument contains the string `json` as by convention like other Hestia API bin commands).
 
 ### Calling Other API Methods
-Lastly, you can run any of HestiaCP's API commands using the HCPP object's `run` method. For example, the following code will return an object (JSON already decoded) of all the users:
+You can run any of HestiaCP's API commands using the HCPP object's `run` method. For example, the following code will return an object (JSON already decoded) of all the users:
 
 ```
 global $hcpp;
@@ -103,4 +103,46 @@ The HestiaCP Pluginable project includes special functionality for processing [P
 
 A plugin author can execute custom PHP for hosted sites by simply including a file named 'prepend.php' for execution before any hosted site scripts; and/or include a file named 'append.php' to execute code after any hosted site scripts. 
 
-Execution priority within plugins can occur earlier or later (with competeting plugins) by simply including an underscore followed by a priority number. Like the priority number in [WordPress' action API](https://developer.wordpress.org/reference/functions/add_action/), a file with a name and lower number will execute before files named with a larger number. For example, `prepend_1.php` (priority #1) executes before `prepend_99.php` (priority #99). The default is 10, therefore the file named `prepend.php` is essentially the same as `prepend_10.php`.
+Execution priority within plugins can occur earlier or later (with competing plugins) by simply including an underscore followed by a priority number. Like the priority number in [WordPress' action API](https://developer.wordpress.org/reference/functions/add_action/), a file with a name and lower number will execute before files named with a larger number. For example, `prepend_1.php` (priority #1) executes before `prepend_99.php` (priority #99). The default is 10, therefore the file named `prepend.php` is essentially the same as `prepend_10.php`.
+
+### Allocating Ports for Additional Services
+HestiaCP Pluginable's API includes methods for allocating unique server ports. Using the methods below, your plugin can reserve ports on the server for domain or user specific based services (i.e. hosting a NodeJS Express based app, or setting up a Xdebug user session, etc) or a unique system wide service (i.e. an XMPP server, MQTT broker, or a Gitea server for all clients, etc). 
+
+
+```
+$port = $hcpp->allocate_port( $name, $type, $id);
+
+$port = $hcpp->get_port( $name, $type, $id );
+
+$hcpp->delete_port( $name, $type, $id );
+```
+
+All the methods above expect three parameters:
+
+| Parameter | Description |
+|---|---|
+| name | The service name (will be used as a variable name)|
+| type | The service type; domain (default), user, or system |
+| id | The domain or username (used only when type is domain or user) |
+
+Use the `allocate_port` method to reserve a port for a service. This could be invoked when an action hook occurs for adding a domain. For instance, if you wish to allocate a port for a NodeJS Express app for a given domain name (i.e. example.com); invoke the method like this:
+
+```
+global $hcpp;
+$hcpp->add_action( 'pre_add_web_domain_backend', function( $args ) {
+    // $user = $args[0]; // not used 
+    $domain = $args[1];  // example.com
+    $hcpp->allocate_port( 'myapp', 'domain', $domain );
+});
+
+```
+
+The code above will generate a configuration file at `/opt/hestiacp-pluginable/ports/domain-example.com.ports`. The file will contain the following port defintion in an Nginx conf file format that defines a variable value:
+
+```
+set $myapp_port 50000;
+```
+
+An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hestiacp-pluginable/ports/user-johnsmith.ports`. System wide defined ports can be referenced from `/opt/hestiacp-pluginable/ports/system.ports`. 
+
+While the `.ports` files are in Nginx conf format for convenience; any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hestiacp-pluginable/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files.
