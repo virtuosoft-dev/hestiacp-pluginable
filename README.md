@@ -30,8 +30,8 @@ Run the post_install.sh script. This will automatically be run anytime HestiaCP 
 ```
 
 ---
-&nbsp;
 
+&nbsp;
 ## Creating a plugin
 Plugins live in a folder of their own name within `/usr/local/hestia/web/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
 
@@ -65,31 +65,31 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomi
 
 The above sample plugin will write the arguments to `/var/log/hestia/pluginable.log` (if logging is on, see 'Debug Logging' below). 
 
-Notice that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function. 
+Notice that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function.
 
-### Debug Logging
-
-You can view all the possible hook names that the hestiacp-pluginable API can respond to by editing line 18 to turn logging on in the file at `/usr/local/hestia/web/pluginable.php`:
-
-```
-    public $logging = true;
-```
-
-This will cause all possible hooks to be logged with an excerpt of the arguments in the log file at: `/var/log/hestia/pluginable.log`. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/var/log/hestia/pluginable.log` file:
+&nbsp;
+### Registering Install and Uninstall Scripts
+Often times a plugin may wish to add files and folders to the HestiaCP runtime; specifically the data/templates folder. In these cases, it's in the plugin's best interest to copy over its own template files upon installation. Likewise, it's important to remove such files upon un-installation or plugin deletion. HestiaCP Pluginable API provides two such methods to aid authors in running plugin installation and un-installation scripts:
 
 ```
-cat /var/log/hestia/pluginable.log
+// From within plugin.php
+
+global $hcpp;
+
+$hcpp->register_install_script( dirname(__FILE__) . '/install.sh' );
+$hcpp->register_uninstall_script( dirname(__FILE__) . '/uninstall.sh' );
 ```
 
-Note: the pluginable.log file is self purging and purposely only displays the last 8000 lines. It is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes; DO NOT delete this file as it can break logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
+You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login or logout event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/web/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
 
-```
-truncate -s 0 /var/log/hestia/pluginable.log
-```
+The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/web/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hesitacp-pluginable/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login/logout to Hestia. Lastly, the script itself is destroyed after it has been executed. 
 
+Its not recommended to alter the existing files that HestiaCP comes with because they can be overwritten when HesitaCP self-updates. In those cases, (again, NOT recommended) you can utilitize HestiaCP Pluginable's API's `patch_file` function and `post_install` action hook to re-apply any changes to core files. Care should be taken as this can become complicated and difficult to undo with plugin uninstallation (and if other plugins have applied changes prior). Because Pluginable itself has already patched a number of HestiaCP core files; chances are an action hook already exists for you to customize HestiaCP without the need to alter core files. 
+
+&nbsp;
 ### Invoking Plugins via Hestia API
 Plugins also have the ability to execute code on behalf of invoking Hestia's API. An additional bin file called `v-invoke-plugin` can take an arbitrary number of arguments and will in turn execute the `invoke_plugin` action. A plugin author can subscribe to this message and execute custom code. Results can be returned, altering any values passed to other subscribers; or an author can echo results back to the caller as clear text or optionally, as JSON (or as JSON if an argument contains the string `json` as by convention like other Hestia API bin commands).
-
+<br><br>
 ### Calling Other API Methods
 You can run any of HestiaCP's API commands using the HCPP object's `run` method. For example, the following code will return an object (JSON already decoded) of all the users:
 
@@ -98,6 +98,7 @@ global $hcpp;
 $all_users = $hcpp->run('list-users json');
 ```
 
+&nbsp;
 ### Hosted Site Prepends and Appends 
 The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file). This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as WordFence, ISPProtect, etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
 
@@ -105,6 +106,7 @@ A plugin author can execute custom PHP for hosted sites by simply including a fi
 
 Execution priority within plugins can occur earlier or later (with competing plugins) by simply including an underscore followed by a priority number. Like the priority number in [WordPress' action API](https://developer.wordpress.org/reference/functions/add_action/), a file with a name and lower number will execute before files named with a larger number. For example, `prepend_1.php` (priority #1) executes before `prepend_99.php` (priority #99). The default is 10, therefore the file named `prepend.php` is essentially the same as `prepend_10.php`.
 
+&nbsp;
 ### Allocating Ports for Additional Services
 HestiaCP Pluginable's API includes methods for allocating unique server ports. Using the methods below, your plugin can reserve ports on the server for domain or user specific based services (i.e. hosting a NodeJS Express based app, or setting up a Xdebug user session, etc) or a unique system wide service (i.e. an XMPP server, MQTT broker, or a Gitea server for all clients, etc). 
 
@@ -146,3 +148,23 @@ set $myapp_port 50000;
 An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hestiacp-pluginable/ports/user-johnsmith.ports`. System wide defined ports can be referenced from `/opt/hestiacp-pluginable/ports/system.ports`. 
 
 While the `.ports` files are in Nginx conf format for convenience; any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hestiacp-pluginable/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files.
+
+&nbsp;
+### Debug Logging
+You can view all the possible hook names that the hestiacp-pluginable API can respond to by editing line 18 to turn logging on in the file at `/usr/local/hestia/web/pluginable.php`:
+
+```
+    public $logging = true;
+```
+
+This will cause all possible hooks to be logged with an excerpt of the arguments in the log file at: `/var/log/hestia/pluginable.log`. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/var/log/hestia/pluginable.log` file:
+
+```
+cat /var/log/hestia/pluginable.log
+```
+
+Note: the pluginable.log file is self purging and purposely only displays the last 8000 lines. It is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes; DO NOT delete this file as it can break logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
+
+```
+truncate -s 0 /var/log/hestia/pluginable.log
+```
