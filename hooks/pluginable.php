@@ -90,6 +90,11 @@
             // Update the ports file with the next available port
             $port = $this->find_next_port();
             file_put_contents( $file, "set \$$name $port;\n", FILE_APPEND );
+            if ( strpos( $file, 'system.ports' ) !== false ) {
+                chmod( $file, 0644 );
+                chown( $file, $user );
+                chgrp( $file, $user );
+            }
             return $port;
         }       
 
@@ -376,4 +381,29 @@
             }
         }
     }
+
+    // Throw new_web_domain_ready via v-invoke-plugin hook when
+    // conf folder and public_html folders are accessible
+    $hcpp->add_action( 'pre_add_web_domain_backend', function( $args ) {
+        $user = $args[0];
+        $domain = $args[1];
+
+        // Fire off our delay script to await the new domain's folders
+        global $hcpp;
+        $cmd = "nohup " . __DIR__ . "/await_domain.sh ";
+        $cmd .= escapeshellarg( $user ) . " ";
+        $cmd .= escapeshellarg( $domain );
+        $cmd .= ' > /dev/null 2>&1 &';
+        $hcpp->log( $cmd );
+        shell_exec( $cmd ); 
+    });
+    
+    // Throw new_web_domain_ready via v-invoke-plugin hook
+    $hcpp->add_action( 'invoke-plugin', function( $args ) {
+        global $hcpp;
+        if ( $args[0] == 'new_web_domain_ready' ) {
+            array_shift( $args );
+            $hcpp->do_action( 'new_web_domain_ready', $args );
+        }
+    });
 }

@@ -7,4 +7,5 @@ require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp;
 
 // Pass along any arguments
+array_shift( $argv );
 $hcpp->do_action( 'invoke_plugin', $argv );
