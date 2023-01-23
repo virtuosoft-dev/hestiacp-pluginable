@@ -147,7 +147,7 @@ set $myapp_port 50000;
 
 An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hestiacp-pluginable/ports/johnsmith/user.ports`. System wide defined ports can be referenced from `/opt/hestiacp-pluginable/ports/system.ports`. 
 
-While the `.ports` files are in Nginx conf format for convenience, any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hestiacp-pluginable/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files. For user.ports file; the file can only be read by the given user.
+While the `.ports` files are in Nginx conf format for convenience, any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hestiacp-pluginable/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files. For user and domain .ports files; the files can only be read by the given HesitaCP user.
 
 &nbsp;
 ### Debug Logging
