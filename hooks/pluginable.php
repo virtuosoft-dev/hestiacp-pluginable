@@ -334,6 +334,25 @@
             }
             fclose($handle);            
         }
+
+        /**
+         * patch_file function. 
+         * 
+         * Tests if the given file exists and  does not contain the content of replace;
+         * if missing it performs a search and replace on the file.
+         * 
+         * @param string $file The file to patch.
+         * @param string $search The search string.
+         * @param string $replace The replace string.
+         */ 
+        public function patch_file( $file, $search, $replace ) {
+            if ( file_exists( $file ) && ! strstr( file_get_contents( $file ), $replace ) && strstr( file_get_contents( $file ), $search )) {
+                $content = file_get_contents( $file );
+                $content = str_replace( $search, $replace, $content );
+                file_put_contents( $file, $content );
+                $this->log( "Patched $file with $replace");
+            }
+        }
     }
 
     global $hcpp;
