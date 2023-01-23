@@ -112,11 +112,11 @@ HestiaCP Pluginable's API includes methods for allocating unique server ports. U
 
 
 ```
-$port = $hcpp->allocate_port( $name, $type, $id);
+$port = $hcpp->allocate_port( $name, $user, $domain );
 
-$port = $hcpp->get_port( $name, $type, $id );
+$port = $hcpp->get_port( $name, $user, $domain );
 
-$hcpp->delete_port( $name, $type, $id );
+$hcpp->delete_port( $name, $user, $domain );
 ```
 
 All the methods above expect three parameters:
@@ -124,28 +124,28 @@ All the methods above expect three parameters:
 | Parameter | Description |
 |---|---|
 | name | The service name (will be used as a variable name)|
-| type | The service type; domain (default), user, or system |
-| id | The domain or username (used only when type is domain or user) |
+| user | The username associated with the port; or system wide port if omitted|
+| domain | The domain associated with the port; or user defined port if ommitted|
 
 Use the `allocate_port` method to reserve a port for a service. This could be invoked when an action hook occurs for adding a domain. For instance, if you wish to allocate a port for a NodeJS Express app for a given domain name (i.e. example.com); invoke the method like this:
 
 ```
 global $hcpp;
 $hcpp->add_action( 'pre_add_web_domain_backend', function( $args ) {
-    // $user = $args[0]; // not used 
+    $user = $args[0];    // johnsmith
     $domain = $args[1];  // example.com
-    $hcpp->allocate_port( 'myapp', 'domain', $domain );
+    $hcpp->allocate_port( 'myapp', $user, $domain );
 });
 
 ```
 
-The code above will generate a configuration file at `/opt/hestiacp-pluginable/ports/domain-example.com.ports`. The file will contain the following port defintion in an Nginx conf file format that defines a variable value:
+The code above will generate a configuration file at `/opt/hestiacp-pluginable/ports/johnsmitg/example.com.ports`. The file will contain the following port defintion in an Nginx conf file format that defines a variable value:
 
 ```
 set $myapp_port 50000;
 ```
 
-An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hestiacp-pluginable/ports/user-johnsmith.ports`. System wide defined ports can be referenced from `/opt/hestiacp-pluginable/ports/system.ports`. 
+An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hestiacp-pluginable/ports/johnsmith/user.ports`. System wide defined ports can be referenced from `/opt/hestiacp-pluginable/ports/system.ports`. 
 
 While the `.ports` files are in Nginx conf format for convenience; any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hestiacp-pluginable/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files.
 
