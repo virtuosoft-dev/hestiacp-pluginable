@@ -18,6 +18,7 @@
         public $logging = false;
         public $folder_ports = '/opt/hestia-pluginable/ports';
         public $start_port = 50000;
+        public $installers = [];
         
         /**
          * Allow us to extend the HCPP dynamically.
@@ -266,6 +267,76 @@
                 return $args[0];
             }else{
                 return $args;
+            }
+        }
+
+        /** 
+         * Register a script to be exectued once when the plugin is first present
+         * in /usr/local/hestia/web/plugins.
+         */
+        public function register_install_script( $file ) {
+            
+            $plugin_name = basename( dirname( $file ) );
+
+            // Check that the installed flag file doesn't already exist
+            if ( file_exists( "/opt/hestiacp-pluginable/installed/$plugin_name" ) ) {
+                 
+                // Remember the plugin_name to run its install script
+                $this->installers[] = $file;
+            }
+        }
+        
+        /**
+         * Register a script to be executed after the plugin folder has been
+         * from /usr/local/hesita/web/plugins deleted. 
+         */
+        public function register_uninstall_script( $file ) {
+
+            // Check if the uninstallers file already exists, if not; copy it over
+            $plugin_name = basename( dirname( $file ) );
+            if ( ! file_exists( "/opt/hestiacp-pluginable/uninstallers/$plugin_name" ) ) {
+                copy( $file, "/opt/hestiacp-pluginable/uninstallers/$plugin_name" );
+            }
+        }
+
+        /**
+         * Our object contructor
+         */
+        public function __construct() {
+            $this->add_action( 'check_user_password', [ $this, 'run_install_scripts' ] );
+        }
+
+        /**
+         * Run any install scripts for plugins that have registered install scripts,
+         * and run any uninstall scripts for plugins that have been removed.
+         */
+        public function run_install_scripts() {
+
+            // Run install scripts for plugins that have been installed
+            foreach( $this->installers as $file ) {
+                $plugin_name = basename( dirname( $file ) );
+
+                // Mark installed flag file to prevent it from running again
+                touch ( "/opt/hestiacp-pluginable/installed/$plugin_name" );
+                $this->log( "Running install script for $plugin_name" );
+                $cmd = "nohup $file ";
+                $cmd .= ' > /dev/null 2>&1 &';
+                $this->log( $cmd );
+                $this->log( shell_exec( $cmd ) );
+            }
+
+            // Run uninstall scripts for plugins that have been removed
+            $uninstallers = glob( '/opt/hestiacp-pluginable/uninstallers/*' );
+            foreach( $uninstallers as $file ) {
+                $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
+                if ( ! file_exists( "/usr/local/hestia/web/plugins/$plugin_name" ) ) {
+                    $this->log( "Running uninstall script for $plugin_name" );
+                    $cmd  = "cd /opt/hestiacp-pluginable/uninstallers && ";
+                    $cmd .= "$file && ";
+                    $cmd .= "rm -f $file && "; // remove uninstall script when done
+                    $cmd .= "rm -f /opt/hestiacp-pluginable/installed/$plugin_name"; // remove installed flag file  
+                    $this->log( shell_exec( $cmd ) );
+                }
             }
         }
 

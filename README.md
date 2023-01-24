@@ -51,7 +51,7 @@ A plugin can hook and respond to actions that HestiaCP invokes whenever an API c
  * A sample plugin for hestiacp-pluginable 
  */
 global $hcpp;
-$hcpp->add_action( 'list-users', function( $args ) {
+$hcpp->add_action( 'list_users', function( $args ) {
 
     global $hcpp;
     $hcpp->logging = true;
@@ -65,7 +65,7 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomi
 
 The above sample plugin will write the arguments to `/var/log/hestia/pluginable.log` (if logging is on, see 'Debug Logging' below). 
 
-Notice that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function.
+Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function and that hyphens/dashes must be replaced with underscores. 
 
 &nbsp;
 ### Registering Install and Uninstall Scripts
@@ -80,9 +80,9 @@ $hcpp->register_install_script( dirname(__FILE__) . '/install.sh' );
 $hcpp->register_uninstall_script( dirname(__FILE__) . '/uninstall.sh' );
 ```
 
-You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login or logout event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/web/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
+You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/web/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
 
-The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/web/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hesitacp-pluginable/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login/logout to Hestia. Lastly, the script itself is destroyed after it has been executed. 
+The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/web/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hesitacp-pluginable/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login to Hestia. Lastly, the script itself is destroyed after it has been executed. 
 
 Its not recommended to alter the existing files that HestiaCP comes with because they can be overwritten when HesitaCP self-updates. In those cases, (again, NOT recommended) you can utilitize HestiaCP Pluginable's API's `patch_file` function and `post_install` action hook to re-apply any changes to core files. Care should be taken as this can become complicated and difficult to undo with plugin uninstallation (and if other plugins have applied changes prior). Because Pluginable itself has already patched a number of HestiaCP core files; chances are an action hook already exists for you to customize HestiaCP without the need to alter core files. 
 
