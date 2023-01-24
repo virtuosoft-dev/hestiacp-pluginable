@@ -370,12 +370,16 @@
             if ( $this->logging == false ) return;
 
             // Make sure log file is writable
-            $logFile = '/var/log/hestia/pluginable.log';
+            $logFile = '/usr/local/hestia/log/pluginable.log';
             
             // Write timestamp and message as JSON to log file
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
-            error_log( $t . ' ' . substr( $msg, 0, 80 ) . "...\n", 3, $logFile );           
+            $msg = $t . ' ' . substr( $msg, 0, 80 ) . "...";
+            $cmd = 'echo ' . escapeshellarg( $msg ) . " >> $logFile";
+
+            // Hack, bypass open_basedir restrictions
+            shell_exec( $cmd );
         }
 
         /**
