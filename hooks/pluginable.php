@@ -375,8 +375,10 @@
             // Write timestamp and message as JSON to log file
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
-            if ( strlen( $msg ) > 80 ) $msg = substr( $msg, 0, 80 ) . '...';
             $msg = $t . ' ' . $msg;
+            if ( strlen( $msg ) > 80 ) {
+                $msg = substr( $msg, 0, 80 ) . '...';
+            }
             $cmd = 'echo ' . escapeshellarg( $msg ) . " >> $logFile";
 
             // Hack, bypass open_basedir restrictions
