@@ -14,9 +14,9 @@
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
 // Ensure log is present and writable when needed
-if ( ! file_exists( '/var/log/hestia/pluginable.log' ) ) {
-    touch( '/var/log/hestia/pluginable.log' );
-    chmod( '/var/log/hestia/pluginable.log', 0666 );
+if ( ! file_exists( '/tmp/hcpp.log' ) ) {
+    touch( '/tmp/hcpp.log' );
+    chmod( '/tmp/hcpp.log', 0666 );
 }
 
 // Copy prepend/append/pluginable system to /opt/hestiacp-pluginable

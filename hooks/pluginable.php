@@ -362,7 +362,11 @@
         }
 
         /**
-         * Write a log message to the HestiaCP log.
+         * Write a log message to the /tmp/hcpp.log file. Why here? Because
+         * we can't log UI events to /var/log/hestia/ because open_basedir,
+         * and we are logging privledged (root) and (admin) process space
+         * events and they are isolated. /tmp/ is the only safe place to
+         * write w/out causing runtime issues. 
          * 
          * @param mixed $msg The message or object to write to the log.
          */
@@ -370,7 +374,7 @@
             if ( $this->logging == false ) return;
 
             // Make sure log file is writable
-            $logFile = '/usr/local/hestia/log/pluginable.log';
+            $logFile = '/tmp/hcpp.log';
             
             // Write timestamp and message as JSON to log file
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
@@ -379,10 +383,8 @@
             if ( strlen( $msg ) > 120 ) {
                 $msg = substr( $msg, 0, 120 ) . '...';
             }
-            $cmd = 'echo ' . escapeshellarg( $msg ) . " >> $logFile";
-
-            // Hack, bypass open_basedir restrictions
-            shell_exec( $cmd );
+            $msg .= "\n";
+            error_log( $msg, 3, $logFile );
         }
 
         /**
