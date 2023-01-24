@@ -15,7 +15,7 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = false;
+        public $logging = true;
         public $folder_ports = '/opt/hestia-pluginable/ports';
         public $start_port = 50000;
         public $installers = [];
