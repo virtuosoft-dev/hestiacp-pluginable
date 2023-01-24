@@ -376,8 +376,8 @@
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
-            if ( strlen( $msg ) > 80 ) {
-                $msg = substr( $msg, 0, 80 ) . '...';
+            if ( strlen( $msg ) > 120 ) {
+                $msg = substr( $msg, 0, 120 ) . '...';
             }
             $cmd = 'echo ' . escapeshellarg( $msg ) . " >> $logFile";
 
