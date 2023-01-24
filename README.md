@@ -163,7 +163,7 @@ This will cause all possible hooks to be logged with an excerpt of the arguments
 cat /var/log/hestia/pluginable.log
 ```
 
-Note: the pluginable.log file is self purging and purposely only displays the last 8000 lines. It is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes; DO NOT delete this file as it can break logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
+Note: the pluginable.log file is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes; DO NOT delete this file as it can break logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
 
 ```
 truncate -s 0 /var/log/hestia/pluginable.log
