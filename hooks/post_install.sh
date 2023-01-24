@@ -24,7 +24,7 @@ if ( !is_dir( '/opt/hestiacp-pluginable/installed' ) ) {
     mkdir( '/opt/hestiacp-pluginable/installed', 0755, true );
 }
 if ( !is_dir( '/opt/hestiacp-pluginable/uninstallers' ) ) {
-    mkdir( '/opt/hestiacp-pluginable/uninstalled', 0755, true );
+    mkdir( '/opt/hestiacp-pluginable/uninstallers', 0755, true );
 }
 copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hestiacp-pluginable/prepend.php' );
 copy( '/etc/hestiacp/hooks/append.php', '/opt/hestiacp-pluginable/append.php' );
