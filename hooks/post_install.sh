@@ -19,15 +19,15 @@ if ( ! file_exists( '/tmp/hcpp.log' ) ) {
     chmod( '/tmp/hcpp.log', 0666 );
 }
 
-// Copy prepend/append/pluginable system to /opt/hestiacp-pluginable
-if ( !is_dir( '/opt/hestiacp-pluginable/installed' ) ) {
-    mkdir( '/opt/hestiacp-pluginable/installed', 0755, true );
+// Copy prepend/append/pluginable system to /opt/hcpp
+if ( !is_dir( '/opt/hcpp/installed' ) ) {
+    mkdir( '/opt/hcpp/installed', 0755, true );
 }
-if ( !is_dir( '/opt/hestiacp-pluginable/uninstallers' ) ) {
-    mkdir( '/opt/hestiacp-pluginable/uninstallers', 0755, true );
+if ( !is_dir( '/opt/hcpp/uninstallers' ) ) {
+    mkdir( '/opt/hcpp/uninstallers', 0755, true );
 }
-copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hestiacp-pluginable/prepend.php' );
-copy( '/etc/hestiacp/hooks/append.php', '/opt/hestiacp-pluginable/append.php' );
+copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hcpp/prepend.php' );
+copy( '/etc/hestiacp/hooks/append.php', '/opt/hcpp/append.php' );
 
 // Copy v-invoke-plugin to /usr/local/hestia/bin to allow invocation from API
 copy( '/etc/hestiacp/hooks/v-invoke-plugin', '/usr/local/hestia/bin/v-invoke-plugin' );
@@ -55,7 +55,7 @@ foreach( $files as $file ) {
     $hcpp->patch_file( 
         $file,
         "\nphp_admin_value[open_basedir] =",
-        "\nphp_admin_value[auto_prepend_file] = /opt/hestiacp-pluginable/prepend.php\n\nphp_admin_value[auto_append_file] = /opt/hestiacp-pluginable/append.php\nphp_admin_value[open_basedir] ="
+        "\nphp_admin_value[auto_prepend_file] = /opt/hcpp/prepend.php\n\nphp_admin_value[auto_append_file] = /opt/hcpp/append.php\nphp_admin_value[open_basedir] ="
     );
 }
 
