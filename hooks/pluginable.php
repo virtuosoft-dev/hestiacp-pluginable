@@ -276,12 +276,12 @@
          */
         public function register_install_script( $file ) {
             
-            $plugin_name = basename( dirname( $file ) );
-
             // Check that the installed flag file doesn't already exist
-            if ( file_exists( "/opt/hestiacp-pluginable/installed/$plugin_name" ) ) {
+            $plugin_name = basename( dirname( $file ) );
+            if ( !file_exists( "/opt/hestiacp-pluginable/installed/$plugin_name" ) ) {
                  
                 // Remember the plugin_name to run its install script
+                $this->log( "Registering install script for $plugin_name");
                 $this->installers[] = $file;
             }
         }
@@ -294,8 +294,9 @@
 
             // Check if the uninstallers file already exists, if not; copy it over
             $plugin_name = basename( dirname( $file ) );
-            if ( ! file_exists( "/opt/hestiacp-pluginable/uninstallers/$plugin_name" ) ) {
+            if ( !file_exists( "/opt/hestiacp-pluginable/uninstallers/$plugin_name" ) ) {
                 copy( $file, "/opt/hestiacp-pluginable/uninstallers/$plugin_name" );
+                chmod( "/opt/hestiacp-pluginable/uninstallers/$plugin_name", 0700 );
             }
         }
 
@@ -311,7 +312,7 @@
          * and run any uninstall scripts for plugins that have been removed.
          */
         public function run_install_scripts() {
-
+            
             // Run install scripts for plugins that have been installed
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
@@ -335,6 +336,7 @@
                     $cmd .= "$file && ";
                     $cmd .= "rm -f $file && "; // remove uninstall script when done
                     $cmd .= "rm -f /opt/hestiacp-pluginable/installed/$plugin_name"; // remove installed flag file  
+                    $this->log( $cmd );
                     $this->log( shell_exec( $cmd ) );
                 }
             }
