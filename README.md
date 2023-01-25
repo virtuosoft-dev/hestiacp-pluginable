@@ -63,7 +63,7 @@ $hcpp->add_action( 'list_users', function( $args ) {
 
 It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
 
-The above sample plugin will write the arguments to `/var/log/hestia/pluginable.log` (if logging is on, see 'Debug Logging' below). 
+The above sample plugin will write the arguments to `/tmp/hcpp.log` (if logging is on, see 'Debug Logging' below). 
 
 Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function and that hyphens/dashes must be replaced with underscores. 
 
@@ -157,14 +157,15 @@ You can view all the possible hook names that the hestiacp-pluginable API can re
     public $logging = true;
 ```
 
-This will cause all possible hooks to be logged with an excerpt of the arguments in the log file at: `/var/log/hestia/pluginable.log`. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/var/log/hestia/pluginable.log` file:
+This will cause all possible hooks to be logged with an excerpt of the arguments in the log file at: `/tmp/hcpp.log`. With the line above uncommented, try browsing the HestiaCP web pages and view the contents of the `/tmp/hcpp.log` file:
 
 ```
-cat /var/log/hestia/pluginable.log
+cat /tmp/hcpp.log
 ```
 
-Note: the pluginable.log file is self purging and purposely only displays the last 8000 lines. It is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes; DO NOT delete this file as it can break logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
+Note: the hcpp.log file is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes. Also, HestiaCP UI process does not have PHP access to /var/log/hestia due to open_basedir
+restrictions. /tmp/hcpp.log is a 'safe' file path; DO NOT delete this file as it can break runtime/logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
 
 ```
-truncate -s 0 /var/log/hestia/pluginable.log
+truncate -s 0 /tmp/hcpp.log
 ```

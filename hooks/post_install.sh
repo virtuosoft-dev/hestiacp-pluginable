@@ -13,12 +13,18 @@
 // Copy pluginable.php to /usr/local/hestia/web/pluginable.php
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
 
+// Ensure log is present and writable when needed
+if ( ! file_exists( '/tmp/hcpp.log' ) ) {
+    touch( '/tmp/hcpp.log' );
+    chmod( '/tmp/hcpp.log', 0666 );
+}
+
 // Copy prepend/append/pluginable system to /opt/hestiacp-pluginable
 if ( !is_dir( '/opt/hestiacp-pluginable/installed' ) ) {
     mkdir( '/opt/hestiacp-pluginable/installed', 0755, true );
 }
 if ( !is_dir( '/opt/hestiacp-pluginable/uninstallers' ) ) {
-    mkdir( '/opt/hestiacp-pluginable/installed', 0755, true );
+    mkdir( '/opt/hestiacp-pluginable/uninstallers', 0755, true );
 }
 copy( '/etc/hestiacp/hooks/prepend.php', '/opt/hestiacp-pluginable/prepend.php' );
 copy( '/etc/hestiacp/hooks/append.php', '/opt/hestiacp-pluginable/append.php' );
@@ -132,11 +138,5 @@ $hcpp->patch_file(
     "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
     "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
 );
-
-// Ensure log is present and writable when needed
-if ( ! file_exists( '/var/log/hestia/pluginable.log' ) ) {
-    touch( '/var/log/hestia/pluginable.log' );
-    chmod( '/var/log/hestia/pluginable.log', 0666 );
-}
 
 $hcpp->do_action( 'post_install' );

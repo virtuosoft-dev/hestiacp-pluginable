@@ -15,7 +15,7 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = false;
+        public $logging = true;
         public $folder_ports = '/opt/hestia-pluginable/ports';
         public $start_port = 50000;
         public $installers = [];
@@ -362,7 +362,11 @@
         }
 
         /**
-         * Write a log message to the HestiaCP log.
+         * Write a log message to the /tmp/hcpp.log file. Why here? Because
+         * we can't log UI events to /var/log/hestia/ because open_basedir,
+         * and we are logging privledged (root) and (admin) process space
+         * events and they are isolated. /tmp/ is the only safe place to
+         * write w/out causing runtime issues. 
          * 
          * @param mixed $msg The message or object to write to the log.
          */
@@ -370,45 +374,17 @@
             if ( $this->logging == false ) return;
 
             // Make sure log file is writable
-            $logFile = '/var/log/hestia/pluginable.log';
-            try {
-                chmod( $logFile, 0666 );
-            } catch (Exception $e) {
-                // Do nothing
-            }
+            $logFile = '/tmp/hcpp.log';
             
             // Write timestamp and message as JSON to log file
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
-            error_log( $t . ' ' . substr( $msg, 0, 80 ) . "\n", 3, $logFile );
-
-            // Only keep the last 8000 lines
-            $maxLines = 8000;            
-            $lineCount = 0;
-            $lines = array();
-            
-            // read log file
-            if (file_exists($logFile)) {
-                $handle = fopen($logFile, "r");
-                while(!feof($handle)) {
-                    $line = fgets($handle);
-                    $lines[] = $line;
-                    $lineCount++;
-                }
-                fclose($handle);
+            $msg = $t . ' ' . $msg;
+            if ( strlen( $msg ) > 120 ) {
+                $msg = substr( $msg, 0, 120 ) . '...';
             }
-            
-            // remove extra lines
-            if ($lineCount > $maxLines) {
-                $lines = array_slice($lines, $lineCount - $maxLines);
-            }
-            
-            // write log file
-            $handle = fopen($logFile, "w");
-            foreach ($lines as $line) {
-                fwrite($handle, $line);
-            }
-            fclose($handle);            
+            $msg .= "\n";
+            error_log( $msg, 3, $logFile );
         }
 
         /**
