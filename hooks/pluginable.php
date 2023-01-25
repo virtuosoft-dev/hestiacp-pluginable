@@ -303,7 +303,7 @@
          * Our object contructor
          */
         public function __construct() {
-            $this->add_action( 'check_user_password', [ $this, 'run_install_scripts' ] );
+            $this->add_action( 'priv_check_user_password', [ $this, 'run_install_scripts' ] );
         }
 
         /**
