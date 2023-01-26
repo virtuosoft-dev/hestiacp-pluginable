@@ -16,7 +16,7 @@
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
         public $logging = true;
-        public $folder_ports = '/opt/hestia-pluginable/ports';
+        public $folder_ports = '/opt/hcpp/ports';
         public $start_port = 50000;
         public $installers = [];
         
@@ -85,7 +85,7 @@
 
             // Create the ports folder if it doesn't exist
             if ( !is_dir( dirname( $file ) ) ) {
-                mkdir( $file, 0755, true );
+                mkdir( dirname( $file ), 0755, true );
             }
 
             // Update the ports file with the next available port
