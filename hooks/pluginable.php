@@ -449,7 +449,7 @@
     });
     
     // Throw new_web_domain_ready via v-invoke-plugin hook
-    $hcpp->add_action( 'invoke-plugin', function( $args ) {
+    $hcpp->add_action( 'invoke_plugin', function( $args ) {
         global $hcpp;
         if ( $args[0] == 'new_web_domain_ready' ) {
             array_shift( $args );
