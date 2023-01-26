@@ -169,3 +169,7 @@ restrictions. /tmp/hcpp.log is a 'safe' file path; DO NOT delete this file as it
 ```
 truncate -s 0 /tmp/hcpp.log
 ```
+or
+```
+: > /tmp/hcpp.log
+```

@@ -320,7 +320,8 @@
                 // Mark installed flag file to prevent it from running again
                 touch ( "/opt/hcpp/installed/$plugin_name" );
                 $this->log( "Running install script for $plugin_name" );
-                $cmd = "nohup $file ";
+                $cmd = 'cd ' . dirname( $file ) . ' && ';
+                $cmd .= "nohup $file ";
                 $cmd .= ' > /dev/null 2>&1 &';
                 $this->log( $cmd );
                 $this->log( shell_exec( $cmd ) );
