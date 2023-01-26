@@ -2,7 +2,7 @@
 /**
  * Our Hestia Control Panel Plugin (HCPP) actions/filter API. This file furnishes a basic 
  * WordPress-like API for extending/modifying HestiaCP's functionality. This file reads the
- * /usr/local/hestia/web/plugins directory and loads any plugins found there. 
+ * /usr/local/hestia/plugins directory and loads any plugins found there. 
  * 
  * @version 1.0.0
  * @license GPL-3.0
@@ -272,7 +272,7 @@
 
         /** 
          * Register a script to be exectued once when the plugin is first present
-         * in /usr/local/hestia/web/plugins.
+         * in /usr/local/hestia/plugins.
          */
         public function register_install_script( $file ) {
             
@@ -288,7 +288,7 @@
         
         /**
          * Register a script to be executed after the plugin folder has been
-         * from /usr/local/hesita/web/plugins deleted. 
+         * from /usr/local/hesita/plugins deleted. 
          */
         public function register_uninstall_script( $file ) {
 
@@ -330,7 +330,7 @@
             $uninstallers = glob( '/opt/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
-                if ( ! file_exists( "/usr/local/hestia/web/plugins/$plugin_name" ) ) {
+                if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" ) ) {
                     $this->log( "Running uninstall script for $plugin_name" );
                     $cmd  = "cd /opt/hcpp/uninstallers && ";
                     $cmd .= "$file && ";
@@ -413,7 +413,7 @@
     $hcpp = new HCPP();
 
     // Check/create plugins folder
-    $plugins_folder = '/usr/local/hestia/web/plugins';
+    $plugins_folder = '/usr/local/hestia/plugins';
     if ( !is_dir( $plugins_folder ) ) {
         mkdir( $plugins_folder );
         file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
@@ -424,7 +424,7 @@
     $plugins = glob( $plugins_folder . '/*' );
     foreach($plugins as $p) {
         $plugin_file = $p . '/plugin.php';
-        if ( $plugin_file != "/usr/local/hestia/web/plugins/index.php/plugin.php" ) {
+        if ( $plugin_file != "/usr/local/hestia/plugins/index.php/plugin.php" ) {
             if ( file_exists( $plugin_file ) ) {
                 require_once( $plugin_file );
             }

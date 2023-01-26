@@ -1,9 +1,9 @@
 <?php
 /**
- * Run any appends located in the /usr/local/hestia/web/plugins directory based on priority naming schema
+ * Run any appends located in the /usr/local/hestia/plugins directory based on priority naming schema
  */
 
-$folderPath = "/usr/local/hestia/web/plugins";
+$folderPath = "/usr/local/hestia/plugins";
 $appendsArray = array();
 
 // Scan the plugins directory for any append files

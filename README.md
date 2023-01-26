@@ -33,14 +33,14 @@ Run the post_install.sh script. This will automatically be run anytime HestiaCP 
 
 &nbsp;
 ## Creating a plugin
-Plugins live in a folder of their own name within `/usr/local/hestia/web/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
+Plugins live in a folder of their own name within `/usr/local/hestia/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
 
 ```
-/usr/local/hestia/web/plugins/example
+/usr/local/hestia/plugins/example
 ```
 and contain the file plugin.php at:
 ```
-/usr/local/hestia/web/plugins/example/plugin.php
+/usr/local/hestia/plugins/example/plugin.php
 ```
 
 A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
@@ -80,9 +80,9 @@ $hcpp->register_install_script( dirname(__FILE__) . '/install.sh' );
 $hcpp->register_uninstall_script( dirname(__FILE__) . '/uninstall.sh' );
 ```
 
-You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/web/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
+You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/b/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
 
-The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/web/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hcpp/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login to Hestia. Lastly, the script itself is destroyed after it has been executed. 
+The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hcpp/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login to Hestia. Lastly, the script itself is destroyed after it has been executed. 
 
 Its not recommended to alter the existing files that HestiaCP comes with because they can be overwritten when HestiaCP self-updates. In those cases, (again, NOT recommended) you can utilitize HestiaCP Pluginable's API's `patch_file` function and `post_install` action hook to re-apply any changes to core files. Care should be taken as this can become complicated and difficult to undo with plugin uninstallation (and if other plugins have applied changes prior). Because Pluginable itself has already patched a number of HestiaCP core files; chances are an action hook already exists for you to customize HestiaCP without the need to alter core files. 
 

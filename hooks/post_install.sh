@@ -44,11 +44,11 @@ $extension = "tpl";
 $files = glob( "$folderPath/*.$extension" );
 foreach( $files as $file ) {
 
-    // Patch php-fpm templates open_basedir to include /usr/local/hestia/web/plugins
+    // Patch php-fpm templates open_basedir to include /usr/local/hestia/plugins
     $hcpp->patch_file( 
         $file,
         "\nphp_admin_value[open_basedir] =",
-        "\nphp_admin_value[open_basedir] = /home/%user%/.composer:/home/%user%/web/%domain%/public_html:/home/%user%/web/%domain%/private:/home/%user%/web/%domain%/public_shtml:/home/%user%/tmp:/tmp:/var/www/html:/bin:/usr/bin:/usr/local/bin:/usr/share:/opt:/usr/local/hestia/web/plugins\n;php_admin_value[open_basedir] ="
+        "\nphp_admin_value[open_basedir] = /home/%user%/.composer:/home/%user%/web/%domain%/public_html:/home/%user%/web/%domain%/private:/home/%user%/web/%domain%/public_shtml:/home/%user%/tmp:/tmp:/var/www/html:/bin:/usr/bin:/usr/local/bin:/usr/share:/opt:/usr/local/hestia/plugins\n;php_admin_value[open_basedir] ="
     );
 
     // Patch php-fpm templates to support plugins prepend/append system
