@@ -296,7 +296,7 @@
             $plugin_name = basename( dirname( $file ) );
             if ( !file_exists( "/opt/hcpp/uninstallers/$plugin_name" ) ) {
                 copy( $file, "/opt/hcpp/uninstallers/$plugin_name" );
-                chmod( "/opt/hcpp/uninstallers/$plugin_name", 0700 );
+                shell_exec( "chmod 700 /opt/hcpp/uninstallers/$plugin_name" );
             }
         }
 
