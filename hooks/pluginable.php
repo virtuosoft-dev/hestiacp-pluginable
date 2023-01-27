@@ -197,15 +197,14 @@
          * 
          * @return int The next available port number. 
          */
-        private function find_next_port() {
-
+        public function find_next_port() {
+ 
             // Get list of existing Nginx port files
             $files = array();
             $iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $this->folder_ports ) );
             foreach( $iterator as $file ) {
-                if ( !$file->isDir() && strpos( $file->getFilename(), 'prepend' ) === 0 && $file->getExtension() == 'ports' ) {
-                    $fileKey = pathinfo( $file->getFilename(), PATHINFO_FILENAME );
-                    $fileArray[$fileKey] = $file->getPathname();
+                if ( !$file->isDir() && $file->getExtension() == 'ports' ) {
+                    $files[] = $file->getPathname();
                 }
             }
 
