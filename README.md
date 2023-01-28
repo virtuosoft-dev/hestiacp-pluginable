@@ -1,5 +1,5 @@
 # hestiacp-pluginable
-Extend Hestia Control Panel via a simple, WordPress-like plugins API.
+Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API.
 
 > :warning: !!! Note: this repo is in progress; when completed, a release will appear in the release tab.
 
