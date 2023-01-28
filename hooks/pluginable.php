@@ -455,4 +455,25 @@
             $hcpp->do_action( 'new_web_domain_ready', $args );
         }
     });
+
+    // Delete the ports file when the domain is deleted
+    $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
+        global $hcpp;
+        $user = $args[0];
+        $domain = $args[1];
+        if ( file_exists( "/opt/hcpp/ports/$user/$domain.ports" ) ) {
+            unlink( "/opt/hcpp/ports/$user/$domain.ports" );
+        }
+        return $args;
+    });
+
+    // Delete the ports/user folder when user is deleted
+    $hcpp->add_action( 'priv_delete_user', function( $args ) {
+        global $hcpp;
+        $user = $args[0];
+        if ( file_exists( "/opt/hcpp/ports/$user" ) ) {
+            shell_exec( "rm -rf /opt/hcpp/ports/$user" );
+        }
+        return $args;
+    });
 }
