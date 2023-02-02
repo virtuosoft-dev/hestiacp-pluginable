@@ -92,7 +92,7 @@
             $port = $this->find_next_port();
             file_put_contents( $file, "set \$$name $port;\n", FILE_APPEND );
             if ( strpos( $file, 'system.ports' ) !== false ) {
-                chmod( $file, 0644 );
+                chmod( $file, 0640 );
                 chown( $file, $user );
                 chgrp( $file, $user );
             }
