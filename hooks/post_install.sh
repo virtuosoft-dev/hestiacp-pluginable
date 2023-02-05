@@ -59,6 +59,13 @@ foreach( $files as $file ) {
     );
 }
 
+// Hestia's php-fpm.conf
+$hcpp->patch_file( 
+    '/usr/local/hestia/php/etc/php-fpm.conf',
+    'php_admin_value[open_basedir] = /usr/local/hestia/:/tmp/:/dev/:/home/:/etc/ssh/:/backup/:/var/tmp/',
+    'php_admin_value[open_basedir] = /usr/local/hestia/:/tmp/:/dev/:/home/:/etc/ssh/:/backup/:/var/tmp/:/opt/hcpp/'
+);
+
 // domain.sh
 $hcpp->patch_file( 
     '/usr/local/hestia/func/domain.sh',
