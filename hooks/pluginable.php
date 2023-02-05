@@ -400,12 +400,25 @@
          * @param string $replace The replace string.
          */ 
         public function patch_file( $file, $search, $replace ) {
-            if ( file_exists( $file ) && ! strstr( file_get_contents( $file ), $replace ) && strstr( file_get_contents( $file ), $search )) {
+            if ( file_exists( $file ) ) {
                 $content = file_get_contents( $file );
-                $content = str_replace( $search, $replace, $content );
-                file_put_contents( $file, $content );
-                $this->log( "Patched $file with $replace");
+                if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
+                    $content = str_replace( $search, $replace, $content );
+                    file_put_contents( $file, $content );
+                    $this->log( "Patched $file with $replace");
+                }
+
+                // Report patch_file failures, Hestia version may not be compatible
+                if (!strstr( $content, $replace ) && !strstr( $content, $search ) ) {
+                    $this->log( "!!! Failed to patch $file with $replace" );
+                }
+                
+            }else{
+
+                // Report patch_file failures, Hestia version may not be compatible
+                $this->log( "!!! Failed to patch $file not found, with $replace" );
             }
+
         }
     }
 
