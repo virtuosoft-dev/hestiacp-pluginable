@@ -1,7 +1,12 @@
 # hestiacp-pluginable
-Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API.
+Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API. 
 
 > :warning: !!! Note: this repo is in progress; when completed, a release will appear in the release tab.
+
+## Requirements
+
+* Hestia Control Panel
+* Ubuntu Linux OS
 
 ## Installation
 First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. The files in the following folders will be altered during installation and after every update:
@@ -11,10 +16,15 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 * /usr/local/hestia/web/api
 * /usr/local/hestia/func
 
-Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks as root user:
+Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks as root user. First switch to root user:
 
 ```
 sudo -s
+```
+
+Then the rest:
+
+```
 cd /tmp
 wget https://github.com/Steveorevo/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
@@ -23,12 +33,14 @@ rm -rf hestiacp-pluginable-main
 rm main.zip
 ```
 
-Run the post_install.sh script and restart Hestia. This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.14 in Nginx + Apache2 with Multi-PHP installation options.
+Lastly, run the post_install.sh script and restart Hestia: 
 
 ```
 /etc/hestiacp/hooks/post_install.sh
 service hestia restart
 ```
+
+This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.14 in Nginx + Apache2 with Multi-PHP installation options.
 
 ---
 
