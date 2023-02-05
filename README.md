@@ -23,10 +23,11 @@ rm -rf hestiacp-pluginable-main
 rm main.zip
 ```
 
-Run the post_install.sh script. This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.14 in Nginx + Apache2 with Multi-PHP installation options.
+Run the post_install.sh script and restart Hestia. This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.14 in Nginx + Apache2 with Multi-PHP installation options.
 
 ```
 /etc/hestiacp/hooks/post_install.sh
+service hestia restart
 ```
 
 ---
