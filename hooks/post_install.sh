@@ -40,10 +40,11 @@ $hcpp->do_action( 'pre_patch_hestiacp' );
 
 // Patch Hestia templates php-fpm templates ..templates/web/php-fpm/*.tpl
 $folderPath = "/usr/local/hestia/data/templates/web/php-fpm";
-$extension = "tpl";
-$files = glob( "$folderPath/*.$extension" );
+$files = glob( "$folderPath/*.tpl" );
 foreach( $files as $file ) {
-
+    if ( str_pos( $file, 'no-php.tpl' ) !== false ) {
+        continue;
+    }
     // Patch php-fpm templates open_basedir to include /usr/local/hestia/plugins
     $hcpp->patch_file( 
         $file,
