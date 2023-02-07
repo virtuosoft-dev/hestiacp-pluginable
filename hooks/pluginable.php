@@ -16,7 +16,7 @@
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
         public $logging = true;
-        public $folder_ports = '/opt/hcpp/ports';
+        public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
         public $start_port = 50000;
         public $installers = [];
         
@@ -277,7 +277,7 @@
             
             // Check that the installed flag file doesn't already exist
             $plugin_name = basename( dirname( $file ) );
-            if ( !file_exists( "/opt/hcpp/installed/$plugin_name" ) ) {
+            if ( !file_exists( "/usr/local/hestia/data/hcpp/installed/$plugin_name" ) ) {
                  
                 // Remember the plugin_name to run its install script
                 $this->log( "Registering install script for $plugin_name");
@@ -293,9 +293,9 @@
 
             // Check if the uninstallers file already exists, if not; copy it over
             $plugin_name = basename( dirname( $file ) );
-            if ( !file_exists( "/opt/hcpp/uninstallers/$plugin_name" ) ) {
-                copy( $file, "/opt/hcpp/uninstallers/$plugin_name" );
-                shell_exec( "chmod 700 /opt/hcpp/uninstallers/$plugin_name" );
+            if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
+                copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
+                shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
             }
         }
 
@@ -317,7 +317,7 @@
                 $plugin_name = basename( dirname( $file ) );
 
                 // Mark installed flag file to prevent it from running again
-                touch ( "/opt/hcpp/installed/$plugin_name" );
+                touch ( "/usr/local/hestia/data/hcpp/installed/$plugin_name" );
                 $this->log( "Running install script for $plugin_name" );
                 $cmd = 'cd ' . dirname( $file ) . ' && ';
                 $cmd .= "nohup $file ";
@@ -327,15 +327,15 @@
             }
 
             // Run uninstall scripts for plugins that have been removed
-            $uninstallers = glob( '/opt/hcpp/uninstallers/*' );
+            $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
                 if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" ) ) {
                     $this->log( "Running uninstall script for $plugin_name" );
-                    $cmd  = "cd /opt/hcpp/uninstallers && ";
+                    $cmd  = "cd /usr/local/hestia/data/hcpp/uninstallers && ";
                     $cmd .= "$file && ";
                     $cmd .= "rm -f $file && "; // remove uninstall script when done
-                    $cmd .= "rm -f /opt/hcpp/installed/$plugin_name"; // remove installed flag file  
+                    $cmd .= "rm -f /usr/local/hestia/data/hcpp/installed/$plugin_name"; // remove installed flag file  
                     $this->log( $cmd );
                     $this->log( shell_exec( $cmd ) );
                 }
@@ -474,8 +474,8 @@
         global $hcpp;
         $user = $args[0];
         $domain = $args[1];
-        if ( file_exists( "/opt/hcpp/ports/$user/$domain.ports" ) ) {
-            unlink( "/opt/hcpp/ports/$user/$domain.ports" );
+        if ( file_exists( "/usr/local/hestia/data/hcpp/ports/$user/$domain.ports" ) ) {
+            unlink( "/usr/local/hestia/data/hcpp/ports/$user/$domain.ports" );
         }
         return $args;
     });
@@ -484,8 +484,8 @@
     $hcpp->add_action( 'priv_delete_user', function( $args ) {
         global $hcpp;
         $user = $args[0];
-        if ( file_exists( "/opt/hcpp/ports/$user" ) ) {
-            shell_exec( "rm -rf /opt/hcpp/ports/$user" );
+        if ( file_exists( "/usr/local/hestia/data/hcpp/ports/$user" ) ) {
+            shell_exec( "rm -rf /usr/local/hestia/data/hcpp/ports/$user" );
         }
         return $args;
     });

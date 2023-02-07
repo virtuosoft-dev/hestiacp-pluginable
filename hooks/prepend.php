@@ -9,7 +9,7 @@ $prependsArray = array();
 // Scan the plugins directory for any prepend files
 $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($folderPath));
 foreach( $iterator as $file) {
-    if ( !$file->isDir() && $file->getExtension() == "php" ) {
+    if ( $file->getExtension() == "php" ) {
         $fileKey = pathinfo( $file->getFilename(), PATHINFO_FILENAME );
         if ( strpos( $fileKey, 'prepend' ) === 0 ) {
             $prependsArray[$fileKey] = $file->getPathname();

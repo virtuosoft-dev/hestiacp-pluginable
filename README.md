@@ -95,7 +95,7 @@ $hcpp->register_uninstall_script( dirname(__FILE__) . '/uninstall.sh' );
 
 You should define your optional install and uninstall scripts at the start of your plugin.php file to ensure they are properly registered. HestiaCP Pluginable will invoke the install.sh script only once; the next time a user login event occurs in Hestia and the plugin folder exists in `/usr/local/hestia/plugins`. The install script will run within the context of the current working directory of the plugin's folder to make it easy to define copy commands from the plugin's current folder. 
 
-The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/opt/hcpp/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login to Hestia. Lastly, the script itself is destroyed after it has been executed. 
+The uninstall.sh script is only run when the plugin has been deleted from the system (from `/usr/local/hestia/plugins` directory). Because the script itself is removed; Hestia Pluginable will copy the uninstall.sh script from the plugin folder when it is registered via the `register_uninstall_script` method. The uninstall.sh script is copied to the `/usr/local/hestia/data/hcpp/uninstallers/` folder and renamed to the same name as the plugin's original parent folder name. HestiaCP Pluginable executes the script in the context of the aforementioned uninstallers folder when it sees that the original plugin folder was removed and upon user login to Hestia. Lastly, the script itself is destroyed after it has been executed. 
 
 Its not recommended to alter the existing files that HestiaCP comes with because they can be overwritten when HestiaCP self-updates. In those cases, (again, NOT recommended) you can utilitize HestiaCP Pluginable's API's `patch_file` function and `post_install` action hook to re-apply any changes to core files. Care should be taken as this can become complicated and difficult to undo with plugin uninstallation (and if other plugins have applied changes prior). Because Pluginable itself has already patched a number of HestiaCP core files; chances are an action hook already exists for you to customize HestiaCP without the need to alter core files. 
 
@@ -152,15 +152,15 @@ $hcpp->add_action( 'pre_add_web_domain_backend', function( $args ) {
 
 ```
 
-The code above will generate a configuration file at `/opt/hcpp/ports/johnsmitg/example.com.ports`. The file will contain the following port defintion in an Nginx conf file format that defines a variable value:
+The code above will generate a configuration file at `/usr/local/hestia/data/hcpp/ports/johnsmitg/example.com.ports`. The file will contain the following port defintion in an Nginx conf file format that defines a variable value:
 
 ```
 set $myapp_port 50000;
 ```
 
-An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/opt/hcpp/ports/johnsmith/user.ports`. System wide defined ports can be referenced from `/opt/hcpp/ports/system.ports`. 
+An Nginx Proxy template can then use the `include` directive to directly include the file and utilize the variable `$myapp_port` to setup a reverse proxy to serve the NodeJS Express app. By using the Pluginable API, you are guaranteed a unique port number across all domains, users, and the Hestia Control Panel system. Likewise, an Nginx Proxy template could reference a user allocated port from any domain, by including the file (i.e. where username is johnsmith) at `/usr/local/hestia/data/hcpp/ports/johnsmith/user.ports`. System wide defined ports can be referenced from `/usr/local/hestia/data/hcpp/ports/system.ports`. 
 
-While the `.ports` files are in Nginx conf format for convenience, any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/opt/hcpp/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files. For user and domain .ports files; the files can only be read by the given HestiaCP user.
+While the `.ports` files are in Nginx conf format for convenience, any application or service can easily parse the variable and port number to leverage a unique port allocation for their service (i.e. an Xdebug port could be configured via ini_set). The `/usr/local/hestia/data/hcpp/ports` path is apart of the open_basedir path which allows hosted PHP processes read-only access to the files. For user and domain .ports files; the files can only be read by the given HestiaCP user.
 
 &nbsp;
 ### Debug Logging
