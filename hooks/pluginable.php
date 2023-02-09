@@ -382,7 +382,7 @@
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
-            if ( strlen( $msg ) > 120 ) {
+            if ( strlen( $msg ) > 384 ) {
                 $msg = substr( $msg, 0, 120 ) . '...';
             }
             $msg .= "\n";
