@@ -383,7 +383,7 @@
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
             if ( strlen( $msg ) > 384 ) {
-                $msg = substr( $msg, 0, 120 ) . '...';
+                $msg = substr( $msg, 0, 384 ) . '...';
             }
             $msg .= "\n";
             error_log( $msg, 3, $logFile );

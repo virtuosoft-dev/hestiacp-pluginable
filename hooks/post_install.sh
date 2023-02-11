@@ -108,7 +108,7 @@ if ( !file_exists($file) ) {
 $hcpp->patch_file(
     $file,
     "<head>",
-    "<head><" . "?php include( '/usr/local/hestia/web/pluginable.php' );ob_start(); ?" . ">"
+    "<head><" . "?php require_once( '/usr/local/hestia/web/pluginable.php' );ob_start(); ?" . ">"
 );
 $hcpp->patch_file(
     $file,
