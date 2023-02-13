@@ -315,7 +315,7 @@
             // Run install scripts for plugins that have been installed
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
-                if ( str_ends_with( $plugin_name, '.disabled' ) ) {
+                if ( $this->str_ends_with( $plugin_name, '.disabled' ) ) {
                     continue;
                 }
 
@@ -426,17 +426,91 @@
             }
 
         }
-    }
 
-    // Furnish PHP7 compatible str_ends_with() function
-    if (! function_exists('str_ends_with')) {
-        function str_ends_with(string $haystack, string $needle): bool
-        {
+        // *************************************************************************
+        // * Conveniently used string parsing and query functions used by this and
+        // * other plugins. Linear version, lifted from github/steveorevo/GString
+        // *************************************************************************
+
+        /**
+         * Deletes the right most string from the found search string
+         * starting from right to left, including the search string itself.
+         *
+         * @return string
+         */
+        public function delRightMost( $sSource, $sSearch ) {
+            for ( $i = strlen( $sSource ); $i >= 0; $i = $i - 1 ) {
+                $f = strpos( $sSource, $sSearch, $i );
+                if ( $f !== false ) {
+                    return substr( $sSource, 0, $f );
+                    break;
+                }
+            }
+            return $sSource;
+        }
+
+        /**
+         * Deletes the left most string from the found search string
+         * starting from 
+         *
+         * @return string
+         */
+        public function delLeftMost( $sSource, $sSearch ) {
+            for ( $i = 0; $i < strlen( $sSource ); $i = $i + 1 ) {
+                $f = strpos( $sSource, $sSearch, $i );
+                if ( $f !== false ) {
+                    return substr( $sSource, $f + strlen( $sSearch ), strlen( $sSource ) );
+                    break;
+                }
+            }
+            return $sSource;
+        }
+
+        /**
+         * Returns the left most string from the found search string
+         * starting from left to right, excluding the search string itself.
+         *
+         * @return string
+         */
+        public function getLeftMost( $sSource, $sSearch ) {
+            for ( $i = 0; $i < strlen( $sSource ); $i = $i + 1 ) {
+                $f = strpos( $sSource, $sSearch, $i );
+                if ( $f !== false ) {
+                    return substr( $sSource, 0, $f );
+                    break;
+                }
+            }
+            return $sSource;
+        }
+
+        /**
+         * Returns the right most string from the found search string
+         * starting from right to left, excluding the search string itself.
+         *
+         * @return string
+         */
+        public function getRightMost( $sSource, $sSearch ) {
+            for ( $i = strlen( $sSource ); $i >= 0; $i = $i - 1 ) {
+                $f = strpos( $sSource, $sSearch, $i );
+                if ( $f !== false ) {
+                    return substr( $sSource, $f + strlen( $sSearch ), strlen( $sSource ) );
+                }
+            }
+            return $sSource;
+        }
+        
+        /**
+         * PHP 7 compatible str_ends_with() function
+         */
+        public function str_ends_with(string $haystack, string $needle) {
             $needle_len = strlen($needle);
             return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
         }
     }
 
+    // *************************************************************************
+    // * Initial HCPP behaviour
+    // *************************************************************************
     global $hcpp;
     $hcpp = new HCPP();
 
@@ -449,7 +523,7 @@
     // Load any plugins
     $plugins = glob( $plugins_folder . '/*' );
     foreach($plugins as $p) {
-        if ( str_ends_with( $p, '.disabled' ) ) {
+        if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
             continue;
         }
         $plugin_file = $p . '/plugin.php';
@@ -509,24 +583,54 @@
     // List plugins in HestiaCP's Configure Server UI
     $hcpp->add_action( 'render_page_body_SERVER_edit_server', function( $content ) {
         global $hcpp;
+
+        // Parse the page content
         $before = $hcpp->nodeapp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
         $after = $hcpp->nodeapp->getRightMost( $content, 'name="v_firewall"' );
         $before .= $hcpp->nodeapp->getLeftMost( $after, '</tr>' ) . '</tr>';
         $after = $hcpp->nodeapp->delLeftMost( $after, '</tr>' );
 
-        $insert = '<tr>
-                       <td class="vst-text input-label">Inserted</td>
+        // Create a block to list our plugins
+        $block = '<tr>
+                       <td class="vst-text input-label">%label%</td>
                    </tr>
                    <tr>
                        <td>
-                           <select class="vst-list" name="v_insert">
+                           <select class="vst-list" name="v_%name%">
                                <option value="no">No</option>
-                               <option value="yes" selected="">Yes</option>
+                               <option value="yes">Yes</option>
                                <option value="uninstall">Uninstall</option>
                            </select>
                            <br><br>
                        </td>
                    </tr>';
+
+        // List the plugins 
+        $plugins = glob( '/usr/local/hestia/plugins/*' );
+        $insert = '';
+        foreach($plugins as $p) {
+
+            // Extract name from plugin.php header or default to folder name
+            if ( ! file_exists( $p . '/plugin.php' ) ) continue;
+            $label = file_get_contents( $p . '/plugin.php' );
+            $name = basename( $p, '.disabled' );
+            if ( strpos( $label, 'Plugin Name: ') !== false ) {
+                $label = $hcpp->delLeftMost( $label, 'Plugin Name: ' );
+                $label = trim( $hcpp->getLeftMost( $label, "\n") );
+            }else{
+                $label = $name;
+            }
+            if ( is_dir( $p ) && ($p[0] != '.') ) {
+                if ( file_exists( $p . '/plugin.php' ) ) {
+                    $insert .= str_replace( array( '%label%', '%name%' ), array( $label, $name ), $block );
+                    if ( strpos( $p, '.disabled') === false) {
+                        $insert = str_replace( 'value="yes"', 'value="yes" selected=true', $insert );
+                    }else{
+                        $insert = str_replace( 'value="no"', 'value="no" selected=true', $insert );
+                    }
+                }
+            }
+        }
 
         $content = $before . $insert . $after;
         return $content;
