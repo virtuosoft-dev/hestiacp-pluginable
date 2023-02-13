@@ -315,6 +315,9 @@
             // Run install scripts for plugins that have been installed
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
+                if ( str_ends_with( $plugin_name, '.disabled' ) ) {
+                    continue;
+                }
 
                 // Mark installed flag file to prevent it from running again
                 touch ( "/usr/local/hestia/data/hcpp/installed/$plugin_name" );
@@ -330,7 +333,10 @@
             $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
-                if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" ) ) {
+
+                if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" && 
+                     ! file_exists( "/usr/local/hestia/plugins/$plugin_name.disabled" ) ) ) {
+                        
                     $this->log( "Running uninstall script for $plugin_name" );
                     $cmd  = "cd /usr/local/hestia/data/hcpp/uninstallers && ";
                     $cmd .= "$file && ";
@@ -422,6 +428,15 @@
         }
     }
 
+    // Furnish PHP7 compatible str_ends_with() function
+    if (! function_exists('str_ends_with')) {
+        function str_ends_with(string $haystack, string $needle): bool
+        {
+            $needle_len = strlen($needle);
+            return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
+        }
+    }
+
     global $hcpp;
     $hcpp = new HCPP();
 
@@ -429,13 +444,14 @@
     $plugins_folder = '/usr/local/hestia/plugins';
     if ( !is_dir( $plugins_folder ) ) {
         mkdir( $plugins_folder );
-        file_put_contents( $plugins_folder . '/index.php', '<' . "?php\n// Silence is golden." );
-        chmod( $plugins_folder . '/index.php', 0644 );
     }
 
     // Load any plugins
     $plugins = glob( $plugins_folder . '/*' );
     foreach($plugins as $p) {
+        if ( str_ends_with( $p, '.disabled' ) ) {
+            continue;
+        }
         $plugin_file = $p . '/plugin.php';
         if ( $plugin_file != "/usr/local/hestia/plugins/index.php/plugin.php" ) {
             if ( file_exists( $plugin_file ) ) {
@@ -488,5 +504,31 @@
             shell_exec( "rm -rf /usr/local/hestia/data/hcpp/ports/$user" );
         }
         return $args;
+    });
+
+    // List plugins in HestiaCP's Configure Server UI
+    $hcpp->add_action( 'render_page_body_SERVER_edit_server', function( $content ) {
+        global $hcpp;
+        $before = $hcpp->nodeapp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
+        $after = $hcpp->nodeapp->getRightMost( $content, 'name="v_firewall"' );
+        $before .= $hcpp->nodeapp->getLeftMost( $after, '</tr>' ) . '</tr>';
+        $after = $hcpp->nodeapp->delLeftMost( $after, '</tr>' );
+
+        $insert = '<tr>
+                       <td class="vst-text input-label">Inserted</td>
+                   </tr>
+                   <tr>
+                       <td>
+                           <select class="vst-list" name="v_insert">
+                               <option value="no">No</option>
+                               <option value="yes" selected="">Yes</option>
+                               <option value="uninstall">Uninstall</option>
+                           </select>
+                           <br><br>
+                       </td>
+                   </tr>';
+
+        $content = $before . $insert . $after;
+        return $content;
     });
 }
