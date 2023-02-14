@@ -349,17 +349,17 @@
         }
 
         /**
-         * Run an API command and return JSON if applicable.
+         * Run a trusted API command and return JSON if applicable.
          * 
          * @param string $cmd The API command to execute along with it's arguments; the 'v-' prefix is optional.
          * @return mixed The output of the command; automatically returns JSON decoded if applicable.
          */
         public function run( $cmd ) {
             if ( file_exists( '/usr/local/hestia/bin/v-' . strtok( $cmd, " " ) ) ) {
-                $cmd = '/etc/hestiacp/hooks/bin_actions ' . 'v-' . $cmd;
+                $cmd = '/etc/hestiacp/hooks/bin_actions sudo ' . 'v-' . $cmd;
             }
             if ( file_exists( '/usr/local/hestia/bin/' . strtok( $cmd, " " ) ) ) {
-                $cmd = '/etc/hestiacp/hooks/bin_actions ' . $cmd;
+                $cmd = '/etc/hestiacp/hooks/bin_actions sudo ' . $cmd;
             }
             $output = shell_exec( $cmd );
             if ( strpos( $cmd, ' json') !== false ) {
@@ -514,6 +514,7 @@
     // *************************************************************************
     // * Initial HCPP behaviour
     // *************************************************************************
+
     global $hcpp;
     $hcpp = new HCPP();
 
@@ -583,6 +584,35 @@
         return $args;
     });
 
+    // Disable/enable/uninstall plugins via trusted command
+    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+        if ( count( $args ) < 3 ) return $args;
+        if ( $args[0] != 'hcpp_config' ) return $args;
+        $v = $args[1];
+        $plugin = $args[2];
+        switch( $v ) {
+            case 'yes':
+                if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
+                    rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                }
+                break;
+            case 'no':
+                if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                    rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
+                }
+                break;
+            case 'uninstall':
+                if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                    rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                }
+                if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
+                }
+                break;
+        }
+        return $args;
+    });
+
     // List plugins in HestiaCP's Configure Server UI
     $hcpp->add_action( 'render_page_body_SERVER_edit_server', function( $content ) {
         global $hcpp;
@@ -591,31 +621,15 @@
         foreach( $_REQUEST as $k => $v ) {
             if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
                 $plugin = substr( $k, 5 );
-                switch( $v ) {
-                    case 'yes':
-                        if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
-                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
-                        }
-                        break;
-                    case 'no':
-                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                            rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
-                        }
-                        break;
-                    case 'uninstall':
-                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                            shell_exec( "sudo rm -rf /usr/local/hestia/plugins/$plugin" );
-                        }
-                        break;
-                }
+                $hcpp->run( 'invoke-plugin hcpp_config' . ' ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
             }
         }
 
         // Parse the page content
-        $before = $hcpp->nodeapp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
-        $after = $hcpp->nodeapp->getRightMost( $content, 'name="v_firewall"' );
-        $before .= $hcpp->nodeapp->getLeftMost( $after, '</tr>' ) . '</tr>';
-        $after = $hcpp->nodeapp->delLeftMost( $after, '</tr>' );
+        $before = $hcpp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
+        $after = $hcpp->getRightMost( $content, 'name="v_firewall"' );
+        $before .= $hcpp->getLeftMost( $after, '</tr>' ) . '</tr>';
+        $after = $hcpp->delLeftMost( $after, '</tr>' );
 
         // Create a block to list our plugins
         $block = '<tr>
@@ -649,12 +663,13 @@
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
                 if ( file_exists( $p . '/plugin.php' ) ) {
-                    $insert .= str_replace( array( '%label%', '%name%' ), array( $label, $name ), $block );
+                    $item = str_replace( array( '%label%', '%name%' ), array( $label, $name ), $block );
                     if ( strpos( $p, '.disabled') === false) {
-                        $insert = str_replace( 'value="yes"', 'value="yes" selected=true', $insert );
+                        $item = str_replace( 'value="yes"', 'value="yes" selected=true', $item );
                     }else{
-                        $insert = str_replace( 'value="no"', 'value="no" selected=true', $insert );
+                        $item = str_replace( 'value="no"', 'value="no" selected=true', $item );
                     }
+                    $insert .= $item;
                 }
             }
         }
