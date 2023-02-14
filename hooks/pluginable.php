@@ -304,15 +304,15 @@
          */
         public function __construct() {
             $this->add_action( 'priv_check_user_password', [ $this, 'run_install_scripts' ] );
+            $this->add_action( 'priv_check_user_password', [ $this, 'run_uninstall_scripts' ] );
         }
 
         /**
-         * Run any install scripts for plugins that have registered install scripts,
-         * and run any uninstall scripts for plugins that have been removed.
+         * Run install scripts for plugins that have been installed
          */
         public function run_install_scripts() {
             
-            // Run install scripts for plugins that have been installed
+            
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
                 if ( $this->str_ends_with( $plugin_name, '.disabled' ) ) {
@@ -328,14 +328,19 @@
                 $this->log( $cmd );
                 $this->log( shell_exec( $cmd ) );
             }
+        }
 
-            // Run uninstall scripts for plugins that have been removed
+        /**
+         * Run uninstall scripts for plugins that have been removed
+         */
+        public function run_uninstall_scripts() {
+            
             $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
 
                 if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" && 
-                     ! file_exists( "/usr/local/hestia/plugins/$plugin_name.disabled" ) ) ) {
+                        ! file_exists( "/usr/local/hestia/plugins/$plugin_name.disabled" ) ) ) {
                         
                     $this->log( "Running uninstall script for $plugin_name" );
                     $cmd  = "cd /usr/local/hestia/data/hcpp/uninstallers && ";
@@ -347,7 +352,6 @@
                 }
             }
         }
-
         /**
          * Run a trusted API command and return JSON if applicable.
          * 
@@ -606,8 +610,7 @@
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin > /dev/null 2>&1" );
-                    shell_exec( "/usr/local/hestia/data/hcpp/uninstallers/$plugin > /dev/null 2>&1" );
+                    $this->run_uninstall_scripts();
                 }
                 break;
         }
