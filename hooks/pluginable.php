@@ -311,8 +311,7 @@
          * Run install scripts for plugins that have been installed
          */
         public function run_install_scripts() {
-            
-            
+                        
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
                 if ( $this->str_ends_with( $plugin_name, '.disabled' ) ) {
@@ -610,6 +609,7 @@
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin > /dev/null 2>&1 &" );
                     $this->run_uninstall_scripts();
                 }
                 break;
