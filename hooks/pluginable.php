@@ -606,7 +606,8 @@
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
+                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin > /dev/null 2>&1" );
+                    shell_exec( "/usr/local/hestia/data/hcpp/uninstallers/$plugin > /dev/null 2>&1" );
                 }
                 break;
         }
