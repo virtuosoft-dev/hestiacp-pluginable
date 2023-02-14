@@ -611,7 +611,8 @@
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
-                    $this->run_uninstall_scripts();
+                    global $hcpp;
+                    $hcpp->run_uninstall_scripts();
                 }
                 break;
         }
