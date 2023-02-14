@@ -338,8 +338,8 @@
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
 
-                if ( ! file_exists( "/usr/local/hestia/plugins/$plugin_name" && 
-                        ! file_exists( "/usr/local/hestia/plugins/$plugin_name.disabled" ) ) ) {
+                if ( ! is_dir( "/usr/local/hestia/plugins/$plugin_name" ) && 
+                        ! is_dir( "/usr/local/hestia/plugins/$plugin_name.disabled" ) ) {
                         
                     $this->log( "Running uninstall script for $plugin_name" );
                     $cmd  = "cd /usr/local/hestia/data/hcpp/uninstallers && ";
@@ -605,11 +605,12 @@
                 }
                 break;
             case 'uninstall':
+
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin > /dev/null 2>&1 &" );
+                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
                     $this->run_uninstall_scripts();
                 }
                 break;
