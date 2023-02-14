@@ -388,9 +388,9 @@
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
-            if ( strlen( $msg ) > 384 ) {
-                $msg = substr( $msg, 0, 384 ) . '...';
-            }
+            // if ( strlen( $msg ) > 4096 ) {
+            //     $msg = substr( $msg, 0, 4096 ) . '...';
+            // }
             $msg .= "\n";
             error_log( $msg, 3, $logFile );
         }
@@ -500,11 +500,14 @@
         }
         
         /**
-         * PHP 7 compatible str_ends_with() function
+         * PHP 7 compatible poly fills
          */
         public function str_ends_with(string $haystack, string $needle) {
             $needle_len = strlen($needle);
             return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
+        }
+        function str_starts_with($haystack, $needle) {
+            return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
         }
     }
 
@@ -584,6 +587,30 @@
     $hcpp->add_action( 'render_page_body_SERVER_edit_server', function( $content ) {
         global $hcpp;
 
+        // Process any submissions
+        foreach( $_REQUEST as $k => $v ) {
+            if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
+                $plugin = substr( $k, 5 );
+                switch( $v ) {
+                    case 'yes':
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
+                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                        }
+                        break;
+                    case 'no':
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
+                        }
+                        break;
+                    case 'uninstall':
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            shell_exec( "sudo rm -rf /usr/local/hestia/plugins/$plugin" );
+                        }
+                        break;
+                }
+            }
+        }
+
         // Parse the page content
         $before = $hcpp->nodeapp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
         $after = $hcpp->nodeapp->getRightMost( $content, 'name="v_firewall"' );
@@ -596,7 +623,7 @@
                    </tr>
                    <tr>
                        <td>
-                           <select class="vst-list" name="v_%name%">
+                           <select class="vst-list" name="hcpp_%name%">
                                <option value="no">No</option>
                                <option value="yes">Yes</option>
                                <option value="uninstall">Uninstall</option>
