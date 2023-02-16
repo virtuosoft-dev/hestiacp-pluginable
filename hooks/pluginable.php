@@ -627,7 +627,7 @@
         foreach( $_REQUEST as $k => $v ) {
             if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
                 $plugin = substr( $k, 5 );
-                $hcpp->run( 'invoke-plugin hcpp_config' . ' ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
+                $hcpp->run( 'invoke-plugin hcpp_config ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
             }
         }
 
