@@ -107,8 +107,8 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    "    include(\$__template_dir . 'pages/' . \$page . '.html');",
-    "    include(\$__template_dir . 'pages/' . \$page . '.html');\n    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n"
+    "    // Footer",
+    "    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
