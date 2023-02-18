@@ -108,7 +108,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "    // Footer",
-    "    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
+    "    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
@@ -118,7 +118,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "    include(\$__template_dir . 'footer.html');",
-    "    include(\$__template_dir . 'footer.html');\n    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
+    "    include(\$__template_dir . 'footer.html');\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
 );
 
 // api/index.php
