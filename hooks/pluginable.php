@@ -622,7 +622,7 @@
     // List plugins in HestiaCP's Configure Server UI
     $hcpp->add_action( 'render_page', function( $args ) {
         global $hcpp;
-        $content = $args;
+        $content = $args['content'];
         if ( false == ($args['page'] == 'edit_server' && $args['TAB'] == 'SERVER' ) ) {
             return $args;
         }
