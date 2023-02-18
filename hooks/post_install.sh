@@ -92,8 +92,13 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
+    "require_once(dirname(__FILE__) . '/helpers.php');",
+    "require_once(dirname(__FILE__) . '/helpers.php');\n    require_once('/usr/local/hestia/web/pluginable.php');"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
     "    // Header",
-    "    // Header\n    require_once('/usr/local/hestia/web/pluginable.php');\n    global \$hcpp;\n    ob_start();\n"
+    "    // Header\n    global \$hcpp;\n    ob_start();\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
