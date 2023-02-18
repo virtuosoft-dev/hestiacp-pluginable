@@ -120,6 +120,21 @@ $hcpp->patch_file(
     "    include(\$__template_dir . 'footer.html');",
     "    include(\$__template_dir . 'footer.html');\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
 );
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
+    "    } else {\n        return true;\n    }",
+    "    } else {\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
+    "    } ?>",
+    "    }\n    ob_start();\n?>"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
+    "<?php\n}",
+    "<?php\n    global \$hcpp;\n    \$args = ['data' = \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_error_panel', \$args)['content'];\n}"
+);
 
 // api/index.php
 $hcpp->patch_file(
