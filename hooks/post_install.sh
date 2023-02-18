@@ -123,7 +123,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "    } else {\n        return true;\n    }",
-    "    } else {\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
+    "    } else {\n        global \$hcpp;\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
@@ -133,7 +133,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "<?php\n}",
-    "<?php\n    global \$hcpp;\n    \$args = ['data' = \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_error_panel', \$args)['content'];\n}"
+    "<?php\n    global \$hcpp;\n    \$args = ['data' => \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_error_panel', \$args)['content'];\n}"
 );
 
 // api/index.php
