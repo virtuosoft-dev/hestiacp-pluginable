@@ -92,45 +92,33 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    "include(\$__template_dir . 'pages/' . \$page . '.html');",
-    "ob_start(); // render_page_body\n    include(\$__template_dir . 'pages/' . \$page . '.html');\n    global \$hcpp; echo \$hcpp->do_action('render_page_body', \$hcpp->do_action('render_page_body_' . \$TAB . '_' . \$page, ob_get_clean()));\n"
-);
-
-// templates/header.html
-// Accomodate format changes and rename to header.php (https://github.com/Steveorevo/hestiacp/commits/main/web/templates)
-$file = '/usr/local/hestia/web/templates/header.html';
-if ( !file_exists($file) ) { 
-    $file = '/usr/local/hestia/web/templates/header.php';
-    if ( !file_exists($file) ) {
-        echo "Could not find $file\n";
-    }
-}
-$hcpp->patch_file(
-    $file,
-    "<head>",
-    "<head><" . "?php require_once( '/usr/local/hestia/web/pluginable.php' );ob_start(); ?" . ">"
+    "    // Header",
+    "    // Header\n    require_once('/usr/local/hestia/web/pluginable.php');\n    global \$hcpp;\n    ob_start();\n"
 );
 $hcpp->patch_file(
-    $file,
-    "</head>",
-    "<" . "?php global \$hcpp;echo \$hcpp->do_action('head', ob_get_clean()); ?" . "></head>"
+    '/usr/local/hestia/web/inc/main.php',
+    "    include(\$__template_dir . 'header.html');",
+    "    include(\$__template_dir . 'header.html');\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
 );
 $hcpp->patch_file(
-    $file,
-    "<body class=\"body-<?=strtolower(\$TAB)?> lang-<?=\$_SESSION['language']?>\">",
-    "<body class=\"body-<?=strtolower(\$TAB)?> lang-<?=\$_SESSION['language']?>\"><" . "?php ob_start(); ?" . ">"
+    '/usr/local/hestia/web/inc/main.php',
+    "    // Body",
+    "    // Body\n    ob_start();\n"
 );
 $hcpp->patch_file(
-    $file,
-    "<body class=\"body-<?= strtolower(\$TAB) ?> lang-<?= \$_SESSION[\"language\"] ?>\">",
-    "<body class=\"body-<?= strtolower(\$TAB) ?> lang-<?= \$_SESSION[\"language\"] ?>\"><" . "?php ob_start(); ?" . ">"
+    '/usr/local/hestia/web/inc/main.php',
+    "    include(\$__template_dir . 'pages/' . \$page . '.html');",
+    "    include(\$__template_dir . 'pages/' . \$page . '.html');\n    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_page_body', \$args)['content'];\n"
 );
-
-// templates/footer.html
 $hcpp->patch_file(
-    '/usr/local/hestia/web/templates/footer.html',
-    "</body>",
-    "<" . "?php global \$hcpp;echo \$hcpp->do_action('body', ob_get_clean()); ?" . "></body>"
+    '/usr/local/hestia/web/inc/main.php',
+    "    // Footer",
+    "    // Footer\n    ob_start();\n"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
+    "    include(\$__template_dir . 'footer.html');",
+    "    include(\$__template_dir . 'footer.html');\n    \$args = [ 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
 );
 
 // api/index.php

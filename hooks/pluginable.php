@@ -620,8 +620,12 @@
     });
 
     // List plugins in HestiaCP's Configure Server UI
-    $hcpp->add_action( 'render_page_body_SERVER_edit_server', function( $content ) {
+    $hcpp->add_action( 'render_page_body', function( $args ) {
         global $hcpp;
+        $content = $args;
+        if ( false == ($args['page'] == 'edit_server' && $args['TAB'] == 'SERVER' ) ) {
+            return $args;
+        }
 
         // Process any submissions
         foreach( $_REQUEST as $k => $v ) {
@@ -681,6 +685,7 @@
         }
 
         $content = $before . $insert . $after;
-        return $content;
+        $args['content'] = $content;
+        return $args;
     });
 }
