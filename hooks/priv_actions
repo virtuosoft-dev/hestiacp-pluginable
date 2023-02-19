@@ -45,24 +45,25 @@ foreach( $argv as $a) {
 if ( $is_priv == false || $hst_command == '' ) return;
 
 // Strip legacy v- prefix from command name and use underscores instead of dashes
-if ( substr( $hst_command, 0, 3 ) == '/v-' ) {
-    $hst_command = substr( $hst_command, 3 );
+$event = $hst_command;
+if ( substr( $event, 0, 3 ) == '/v-' ) {
+    $event = substr( $event, 3 );
 }
-if ( substr( $hst_command, 0, 2 ) == 'v-' ) {
-    $hst_command = substr( $hst_command, 2 );
+if ( substr( $event, 0, 2 ) == 'v-' ) {
+    $event = substr( $event, 2 );
 }
-$hst_command = 'priv_' . str_replace( '-', '_', $hst_command );
+$event = 'priv_' . str_replace( '-', '_', $event );
 
 // Invoke any plugin actions
 if (count( $params ) > 0) {
-    $params = $hcpp->do_action( $hst_command, $params );
+    $params = $hcpp->do_action( $event, $params );
 }else{
-    $hcpp->do_action( $hst_command, '' );
+    $hcpp->do_action( $event, '' );
 }
 
 // Re-invoke with filter flag to indicate we've already processed actions
 $cmd = "export HCPPFILTERED=true\n";
-$cmd .=  "/usr/bin/sudo /usr/local/hestia/bin/$hst_command ";
+$cmd .=  "/usr/local/hestia/bin/$hst_command ";
 foreach( $params as $p ) {
     $cmd .= escapeshellarg( $p ) . " ";
 }
