@@ -81,7 +81,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/func/main.sh',
     '# Internal variables',
-    '# Internal variables' . "\n" . 'PARENT=$(ps -o args= $PPID);/etc/hestiacp/hooks/priv_actions $PARENT'
+    '# Internal variables' . "\n" . 'PARENT=$(ps -o args= $PPID);eval "$(/etc/hestiacp/hooks/priv_actions $PARENT)"'
 );
 
 // inc/main.php
