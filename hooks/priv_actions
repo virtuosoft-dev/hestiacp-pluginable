@@ -62,7 +62,7 @@ if (count( $params ) > 0) {
 
 // Re-invoke with filter flag to indicate we've already processed actions
 $cmd = "export HCPPFILTERED=true\n";
-$cmd .=  "/usr/local/hestia/bin/$hst_command ";
+$cmd .=  "/usr/bin/sudo /usr/local/hestia/bin/$hst_command ";
 foreach( $params as $p ) {
     $cmd .= escapeshellarg( $p ) . " ";
 }
