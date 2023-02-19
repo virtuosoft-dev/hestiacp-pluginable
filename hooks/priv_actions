@@ -10,8 +10,14 @@
  * 
  */
 
+// Check if we've already filtered the arguments and carry on
+if ( getenv('HCPPFILTERED') == 'true' ) {
+    echo "export HCPPFILTERED=\n";
+    exit();
+}
+
 require_once( '/usr/local/hestia/web/pluginable.php' );
-global $hcpp; 
+global $hcpp;
 
 // Remove the first argument, which is the path to the script
 $cmd = '';
@@ -49,7 +55,16 @@ $hst_command = 'priv_' . str_replace( '-', '_', $hst_command );
 
 // Invoke any plugin actions
 if (count( $params ) > 0) {
-    $hcpp->do_action( $hst_command, $params );
+    $params = $hcpp->do_action( $hst_command, $params );
 }else{
     $hcpp->do_action( $hst_command, '' );
 }
+
+// Re-invoke with filter flag to indicate we've already processed actions
+$cmd = "export HCPPFILTERED=true\n";
+$cmd .=  "/usr/local/hestia/bin/$hst_command ";
+foreach( $params as $p ) {
+    $cmd .= escapeshellarg( $p ) . " ";
+}
+$cmd .= "\nexit\n";
+echo $cmd;
