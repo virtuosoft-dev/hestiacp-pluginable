@@ -10,7 +10,7 @@
  * 
  */
 
-// Check if we've already filtered the arguments, clear the flag and carry on
+ // Check if we've already filtered the arguments, clear the flag and carry on
 if ( getenv('HCPPFILTERED') == 'true' ) {
     echo "export HCPPFILTERED=\n";
     exit();
@@ -36,7 +36,7 @@ foreach( $argv as $a ) {
     }
 
     // Gather subsequent arguments
-    if ( $cmd != '' ) {
+    if ( $cmd != '' && strpos( $a, '/usr/local/hestia/bin/' ) === false ) {
         $params[] = $a;
     }
 }
@@ -68,4 +68,5 @@ foreach( $params as $p ) {
 $cmd = "export HCPPFILTERED=true\n";
 $cmd .= implode( ' ', $output ) . "\n";
 $cmd .= "exit\n";
-echo $cmd;
+file_put_contents( '/tmp/test.txt', $cmd, FILE_APPEND );
+//echo $cmd;
