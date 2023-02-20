@@ -81,7 +81,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/func/main.sh',
     '# Internal variables',
-    '# Internal variables' . "\nPARENT=\$(tr '\0' '\n' < \"/proc/\$PPID/cmdline\" | sed 's/.*/\"&\"/');eval \"\$(/etc/hestiacp/hooks/priv_actions \$PARENT)\""
+    '# Internal variables' . "\nPARENT=\$(tr '\\0' '\\n' < \"/proc/\$PPID/cmdline\" | sed 's/.*/\"&\"/');eval \"\$(/etc/hestiacp/hooks/priv_actions \$PARENT)\""
 );
 
 // inc/main.php
