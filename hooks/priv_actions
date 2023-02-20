@@ -10,62 +10,62 @@
  * 
  */
 
-// Check if we've already filtered the arguments and carry on
+// Check if we've already filtered the arguments, clear the flag and carry on
 if ( getenv('HCPPFILTERED') == 'true' ) {
     echo "export HCPPFILTERED=\n";
     exit();
 }
 
-require_once( '/usr/local/hestia/web/pluginable.php' );
-global $hcpp;
-
 // Remove the first argument, which is the path to the script
-$cmd = '';
 array_shift( $argv );
 
-// Analyze the arguments
-$is_priv = false;
-$hst_command = '';
+// Check for sudo in starting argument or exit
+if ( strpos( $argv[0], 'sudo' ) === false ) {
+    exit();
+}
+
+// Obtain the API command and parameters
+$cmd = '';
 $params = [];
-foreach( $argv as $a) {
+foreach( $argv as $a ) {
 
-    // Check for sudo
-    if ($a == 'sudo' || $a == '/usr/bin/sudo') {
-        $is_priv = true;
-    }else{
+    // Isolate the API command name
+    if ( strpos( $a, '/usr/local/hestia/bin/' ) !== false ) {
+        $cmd = str_replace( '/usr/local/hestia/bin/', '', $a );
+        $cmd = str_replace('/', '', $cmd);
+    }
 
-        // Get the original command name
-        if ( strpos( $a, '/usr/local/hestia/bin/' ) !== false ) {
-            $hst_command = str_replace( '/usr/local/hestia/bin/', '', $a );
-        }else{
-            $params[] = $a;
-        }
+    // Gather subsequent arguments
+    if ( $cmd != '' ) {
+        $params[] = $a;
     }
 }
-if ( $is_priv == false || $hst_command == '' ) return;
 
-// Strip legacy v- prefix from command name and use underscores instead of dashes
-$event = $hst_command;
-if ( substr( $event, 0, 3 ) == '/v-' ) {
-    $event = substr( $event, 3 );
-}
-if ( substr( $event, 0, 2 ) == 'v-' ) {
-    $event = substr( $event, 2 );
-}
-$event = 'priv_' . str_replace( '-', '_', $event );
+// Throw our priv action filter, strip v- prefix, and replace dashes with underscores 
+require_once( '/usr/local/hestia/web/pluginable.php' );
+global $hcpp;
+$event = $hcpp->getLeftMost( $cmd, 'v-' );
+$event = str_replace( '-', '_', $event );
+$params = $hcpp->do_action( $event, $params );
 
-// Invoke any plugin actions
-if (count( $params ) > 0) {
-    $params = $hcpp->do_action( $event, $params );
-}else{
-    $hcpp->do_action( $event, '' );
+// Reconstruct API call with our filtered parameters
+$output = [];
+foreach( $argv as $a ) {
+
+    // Stop short of old parameters
+    $output[] = $a;
+    if ( strpos( $a, '/usr/local/hestia/bin/' ) !== false ) {
+        break;
+    }
 }
 
-// Re-invoke with filter flag to indicate we've already processed actions
-$cmd = "export HCPPFILTERED=true\n";
-$cmd .=  "/usr/local/hestia/bin/$hst_command ";
+// Add our filtered parameters
 foreach( $params as $p ) {
-    $cmd .= escapeshellarg( $p ) . " ";
+    $output[] = $p;
 }
-$cmd .= "\nexit\n";
+
+// Re-invoke the command with filter flag to indicate we've already processed actions
+$cmd = "export HCPPFILTERED=true\n";
+$cmd .= implode( ' ', $output ) . "\n";
+$cmd .= "exit\n";
 echo $cmd;
