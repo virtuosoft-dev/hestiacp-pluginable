@@ -38,6 +38,7 @@ require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp;
 $event = $hcpp->getLeftMost( $cmd, 'v-' );
 $event = str_replace( '-', '_', $event );
+$event = 'priv_' . $event;
 $params = $hcpp->do_action( $event, $params );
 
 // Reconstruct API call with our filtered parameters
