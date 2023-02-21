@@ -30,7 +30,7 @@ foreach( $argv as $a ) {
 
     // Gather subsequent arguments
     if ( $cmd != '' && strpos( $a, '/usr/local/hestia/bin/' ) === false ) {
-        $params[] = $a;
+        $params[] = trim($a, '"');
     }
 }
 
@@ -55,7 +55,7 @@ foreach( $argv as $a ) {
 
 // Add our filtered parameters
 foreach( $params as $p ) {
-    $output[] = $p;
+    $output[] = escapeshellarg( $p );
 }
 
 // Re-invoke the command with filter flag to indicate we've already processed actions
