@@ -10,20 +10,12 @@
  * 
  */
 
- // Check if we've already filtered the arguments, clear the flag and carry on
-if ( getenv('HCPPFILTERED') == 'true' ) {
-    echo "export HCPPFILTERED=\n";
-    exit();
-}
+// Check if we've already filtered the arguments
+if ( getenv('HCPPFILTERED') == '1' ) return;
 
 // Remove the first argument, which is the path to the script
 array_shift( $argv );
-
-// Check for sudo in starting argument or exit
-if ( strpos( $argv[0], 'sudo' ) === false ) {
-    exit();
-}
-
+      
 // Obtain the API command and parameters
 $cmd = '';
 $params = [];
@@ -65,8 +57,11 @@ foreach( $params as $p ) {
 }
 
 // Re-invoke the command with filter flag to indicate we've already processed actions
-$cmd = "export HCPPFILTERED=true\n";
+if ( strpos( $output[0], 'sudo' ) !== false ) {
+    array_shift( $output ); // already sudo
+}
+$cmd = "export HCPPFILTERED=\"1\"\n";
 $cmd .= implode( ' ', $output ) . "\n";
+$cmd .= "export HCPPFILTERED=\"0\"\n";
 $cmd .= "exit\n";
-file_put_contents( '/tmp/test.txt', $cmd, FILE_APPEND );
-//echo $cmd;
+echo $cmd;
