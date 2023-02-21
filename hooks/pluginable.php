@@ -310,7 +310,7 @@
         /**
          * Run install scripts for plugins that have been installed
          */
-        public function run_install_scripts() {
+        public function run_install_scripts( $args ) {
                         
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
@@ -327,12 +327,13 @@
                 $this->log( $cmd );
                 $this->log( shell_exec( $cmd ) );
             }
+            return  $args;
         }
 
         /**
          * Run uninstall scripts for plugins that have been removed
          */
-        public function run_uninstall_scripts() {
+        public function run_uninstall_scripts( $args ) {
             
             $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
@@ -350,6 +351,7 @@
                     $this->log( shell_exec( $cmd ) );
                 }
             }
+            return  $args;
         }
         /**
          * Run a trusted API command and return JSON if applicable.
