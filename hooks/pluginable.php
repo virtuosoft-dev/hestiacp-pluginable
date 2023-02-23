@@ -595,11 +595,13 @@
         if ( $args[0] != 'hcpp_config' ) return $args;
         $v = $args[1];
         $plugin = $args[2];
+        global $hcpp;
         switch( $v ) {
             case 'yes':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
+                $hcpp->run_install_scripts();
                 break;
             case 'no':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
@@ -613,7 +615,6 @@
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
-                    global $hcpp;
                     $hcpp->run_uninstall_scripts();
                 }
                 break;
