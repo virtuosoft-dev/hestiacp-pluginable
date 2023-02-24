@@ -239,7 +239,9 @@
          * @return mixed The filtered value after all hooked functions are applied to it.
          */
         public function do_action( $tag, $arg = '' ) {
-            $this->log( 'do action as ' . trim( shell_exec( 'whoami' ) ) . ', ' . $tag );$this->log( $arg );
+            if ($this->logging) {
+                $this->log( 'do action as ' . trim( shell_exec( 'whoami' ) ) . ', ' . $tag );$this->log( $arg );
+            }
             if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
             $args = array();
@@ -310,8 +312,7 @@
         /**
          * Run install scripts for plugins that have been installed
          */
-        public function run_install_scripts( $args ) {
-                        
+        public function run_install_scripts( $args = null ) {
             foreach( $this->installers as $file ) {
                 $plugin_name = basename( dirname( $file ) );
                 if ( $this->str_ends_with( $plugin_name, '.disabled' ) ) {
@@ -333,7 +334,7 @@
         /**
          * Run uninstall scripts for plugins that have been removed
          */
-        public function run_uninstall_scripts( $args ) {
+        public function run_uninstall_scripts( $args = null ) {
             
             $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
@@ -566,6 +567,7 @@
             array_shift( $args );
             $hcpp->do_action( 'new_web_domain_ready', $args );
         }
+        return $args;
     });
 
     // Delete the ports file when the domain is deleted
@@ -594,13 +596,13 @@
         if ( count( $args ) < 3 ) return $args;
         if ( $args[0] != 'hcpp_config' ) return $args;
         $v = $args[1];
-        $plugin = $args[2];
+        $plugin = $args[2];        
+        global $hcpp;
         switch( $v ) {
             case 'yes':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
-                global $hcpp;
                 $hcpp->run_install_scripts();
                 break;
             case 'no':
@@ -614,7 +616,6 @@
                 }
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
-                    global $hcpp;
                     $hcpp->run_uninstall_scripts();
                 }
                 break;
