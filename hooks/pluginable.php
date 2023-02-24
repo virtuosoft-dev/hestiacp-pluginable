@@ -433,6 +433,21 @@
 
         }
 
+        /**
+         * Copy a folder recursively, quickly, and retain/restore executable permissions.
+         */
+        public function copy_folder( $src, $dst, $user ) {
+            if ( ! is_dir( $dst ) ) {
+                mkdir( $dst, 0750, true );
+            }
+            $cmd = 'cp -Rp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
+            shell_exec( $cmd );
+            $cmd = 'find "' . $dst . '" -type f -perm /111 -exec chmod +x {} \;';
+            shell_exec( $cmd );
+            $cmd = 'find "' . $dst . '" -type d -perm /111 -exec chmod +x {} \;';
+            shell_exec( $cmd );
+        }
+
         // *************************************************************************
         // * Conveniently used string parsing and query functions used by this and
         // * other plugins. Linear version, lifted from github/steveorevo/GString
