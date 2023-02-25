@@ -444,6 +444,8 @@
             $dst = rtrim( $dst, '/' );
             if ( ! is_dir( $dst ) ) {
                 mkdir( $dst, 0750, true );
+                chown( $dst, $user );
+                chgrp( $dst, $user );
             }
             $cmd = 'cp -RTp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
             shell_exec( $cmd );
