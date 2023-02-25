@@ -437,10 +437,15 @@
          * Copy a folder recursively, quickly, and retain/restore executable permissions.
          */
         public function copy_folder( $src, $dst, $user ) {
+            // Append / to source and destination if necessary
+            if (substr($src, -1) != '/') {
+                $src .= '/';
+            }
+            $dst = rtrim( $dst, '/' );
             if ( ! is_dir( $dst ) ) {
                 mkdir( $dst, 0750, true );
             }
-            $cmd = 'cp -Rp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
+            $cmd = 'cp -RTp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
             shell_exec( $cmd );
             $cmd = 'find "' . $dst . '" -type f -perm /111 -exec chmod +x {} \;';
             shell_exec( $cmd );
