@@ -714,4 +714,11 @@
         $args['content'] = $content;
         return $args;
     });
+
+    // Hestia 1.6 to 1.7 compatibility
+    $hcpp->add_action( 'show_alert_message', function( $args ) {
+        global $hcpp;
+        $args = $hcpp->do_action( 'show_error_panel', $args );
+        return $args;
+    });
 }

@@ -84,68 +84,132 @@ $hcpp->patch_file(
     '# Internal variables' . "\nPARENT=\$(tr '\\0' '\\n' < \"/proc/\$PPID/cmdline\" | sed 's/.*/\"&\"/')\nif [[ \$PARENT == *sudo* ]]; then\n    eval \"\$(/etc/hestiacp/hooks/priv_actions \$PARENT)\"\nfi\n"
 );
 
-// inc/main.php
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
-    "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "require_once(dirname(__FILE__) . '/helpers.php');",
-    "require_once(dirname(__FILE__) . '/helpers.php');\nrequire_once('/usr/local/hestia/web/pluginable.php');"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    // Header",
-    "    // Header\n    global \$hcpp;\n    ob_start();\n"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    include(\$__template_dir . 'header.html');",
-    "    include(\$__template_dir . 'header.html');\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    // Body",
-    "    // Body\n    ob_start();\n"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    // Footer",
-    "    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    // Footer",
-    "    // Footer\n    ob_start();\n"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    include(\$__template_dir . 'footer.html');",
-    "    include(\$__template_dir . 'footer.html');\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    } else {\n        return true;\n    }",
-    "    } else {\n        global \$hcpp;\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "    } ?>",
-    "    }\n    ob_start();\n?>"
-);
-$hcpp->patch_file(
-    '/usr/local/hestia/web/inc/main.php',
-    "<?php\n}",
-    "<?php\n    global \$hcpp;\n    \$args = ['data' => \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_error_panel', \$args)['content'];\n}"
-);
+// inc/main.php - check for Hestia 1.7.X
+if ( false !== strpos( $hcpp->run( 'list-sys-config json' )['config']['VERSION'], '1.7.' ) ) {
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "define(\"HESTIA_CMD\", \"/usr/bin/sudo /usr/local/hestia/bin/\");",
+        "define(\"HESTIA_CMD\", \"/etc/hestiacp/hooks/bin_actions sudo \");"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "require_once dirname(__FILE__) . \"/helpers.php\";",
+        "require_once(dirname(__FILE__) . \"/helpers.php\";\nrequire_once(\"/usr/local/hestia/web/pluginable.php\");"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "// Header",
+        "// Header\n    global \$hcpp;\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "include \$__template_dir . \"header.php\";",
+        "include(\$__template_dir . \"header.php\";\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "// Body",
+        "// Body\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "// Footer",
+        "\$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "// Footer",
+        "// Footer\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "include \$__template_dir . \"footer.php\";",
+        "include \$__template_dir . \"footer.php\";\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "} else {\n\t\treturn true;\n\t}",
+        "    } else {\n        global \$hcpp;\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "if (!empty(\$msgText)) {",
+        "if (!empty(\$msgText)) {\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "\$msgText,\n\t\t);\n",
+        "\$msgText,\n\t\t);\n\t\tglobal \$hcpp;\n    \$args = ['data' => \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_alert_message', \$args)['content'];\n"
+    );
 
-// api/index.php
-$hcpp->patch_file(
-    '/usr/local/hestia/web/api/index.php',
-    "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
-    "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
-);
+    // api/index.php
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/api/index.php',
+        "define(\"HESTIA_CMD\", \"/usr/bin/sudo /usr/local/hestia/bin/\");",
+        "define(\"HESTIA_CMD\", \"/etc/hestiacp/hooks/bin_actions sudo \");"
+    );
+}else{
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
+        "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "require_once(dirname(__FILE__) . '/helpers.php');",
+        "require_once(dirname(__FILE__) . '/helpers.php');\nrequire_once('/usr/local/hestia/web/pluginable.php');"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    // Header",
+        "    // Header\n    global \$hcpp;\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    include(\$__template_dir . 'header.html');",
+        "    include(\$__template_dir . 'header.html');\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    // Body",
+        "    // Body\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    // Footer",
+        "    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_page', \$args)['content'];\n\n    // Footer"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    // Footer",
+        "    // Footer\n    ob_start();\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    include(\$__template_dir . 'footer.html');",
+        "    include(\$__template_dir . 'footer.html');\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    } else {\n        return true;\n    }",
+        "    } else {\n        global \$hcpp;\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "    } ?>",
+        "    }\n    ob_start();\n?>"
+    );
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/inc/main.php',
+        "<?php\n}",
+        "<?php\n    global \$hcpp;\n    \$args = ['data' => \$data, 'content' => ob_get_clean()];\n    echo \$hcpp->do_action('show_error_panel', \$args)['content'];\n}"
+    );
 
+    // api/index.php
+    $hcpp->patch_file(
+        '/usr/local/hestia/web/api/index.php',
+        "define('HESTIA_CMD', '/usr/bin/sudo /usr/local/hestia/bin/');",
+        "define('HESTIA_CMD', '/etc/hestiacp/hooks/bin_actions sudo ');"
+    );
+}
 $hcpp->do_action( 'post_install' );
