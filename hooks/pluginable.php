@@ -327,6 +327,7 @@
                 $cmd .= ' > /dev/null 2>&1 &';
                 $this->log( $cmd );
                 $this->log( shell_exec( $cmd ) );
+                $this->do_action( 'hcpp_plugin_installed', $plugin_name );
             }
             return  $args;
         }
@@ -350,6 +351,7 @@
                     $cmd .= "rm -f /usr/local/hestia/data/hcpp/installed/$plugin_name"; // remove installed flag file  
                     $this->log( $cmd );
                     $this->log( shell_exec( $cmd ) );
+                    $this->do_action( 'hcpp_plugin_uninstalled', $plugin_name );
                 }
             }
             return  $args;
