@@ -400,7 +400,9 @@
             //     $msg = substr( $msg, 0, 4096 ) . '...';
             // }
             $msg .= "\n";
-            error_log( $msg, 3, $logFile );
+            //error_log( $msg, 3, $logFile );
+            chmod( $logFile, 0666 );
+            file_put_contents( $logFile, $msg, FILE_APPEND );
         }
 
         /**
