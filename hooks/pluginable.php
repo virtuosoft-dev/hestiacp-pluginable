@@ -138,7 +138,7 @@
             $content = file_get_contents( $file );
             $content = explode( "\n", $content );
             foreach( $content as $line ) {
-                if ( strpos( $line, "set $name " ) === false ) {
+                if ( strpos( $line, "set \$$name " ) === false ) {
                     $new_content .= "$line\n";
                 }
             }
