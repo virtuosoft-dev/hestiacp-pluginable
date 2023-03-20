@@ -578,7 +578,7 @@
         $domain = $args[1];
         if ( $hcpp->getRightMost( $domain, '/' ) != 'public_html' ) return $args;
         $domain = $hcpp->delRightMost( $domain, '/' );
-        $domain = $hcpp->getRightMost( $domain );
+        $domain = $hcpp->getRightMost( $domain, '/' );
         if ( file_exists( "/home/$user/web/$domain/public_html" ) ) return $args;
 
         // Fire off our delay script to await the new domain's folders
