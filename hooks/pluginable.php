@@ -572,12 +572,13 @@
 
     // Throw new_web_domain_ready via v-invoke-plugin hook when
     // conf folder and public_html folders are accessible
-    $hcpp->add_action( 'pre_add_web_domain_backend', function( $args ) {
+    $hcpp->add_action( 'pre_add_fs_directory', function( $args ) {
+        global $hcpp;
         $user = $args[0];
         $domain = $args[1];
+        $domain = $hcpp->getRightMost( $domain, '/' );
 
         // Fire off our delay script to await the new domain's folders
-        global $hcpp;
         $cmd = "nohup /etc/hestiacp/hooks/await_domain.sh ";
         $cmd .= escapeshellarg( $user ) . " ";
         $cmd .= escapeshellarg( $domain );
