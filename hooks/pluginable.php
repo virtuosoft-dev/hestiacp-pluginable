@@ -576,7 +576,10 @@
         global $hcpp;
         $user = $args[0];
         $domain = $args[1];
-        $domain = $hcpp->getRightMost( $domain, '/' );
+        if ( $hcpp->getRightMost( $domain, '/' ) != 'public_html' ) return;
+        $domain = $hcpp->delRightMost( $domain, '/' );
+        $domain = $hcpp->getRightMost( $domain );
+        if ( file_exists( "/home/$user/conf/web/$domain" ) ) return;
 
         // Fire off our delay script to await the new domain's folders
         $cmd = "nohup /etc/hestiacp/hooks/await_domain.sh ";
