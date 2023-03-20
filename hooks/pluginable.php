@@ -578,7 +578,7 @@
 
         // Fire off our delay script to await the new domain's folders
         global $hcpp;
-        $cmd = "nohup " . __DIR__ . "/await_domain.sh ";
+        $cmd = "nohup /etc/hestiacp/hooks/await_domain.sh ";
         $cmd .= escapeshellarg( $user ) . " ";
         $cmd .= escapeshellarg( $domain );
         $cmd .= ' > /dev/null 2>&1 &';
