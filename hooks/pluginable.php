@@ -142,6 +142,7 @@
                     $new_content .= "$line\n";
                 }
             }
+            $new_content = trim( $new_content );
             file_put_contents( $file, $new_content );
         }
 
