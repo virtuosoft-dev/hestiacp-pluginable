@@ -104,7 +104,7 @@ if ( false !== strpos( $hcpp->run( 'list-sys-config json' )['config']['VERSION']
     $hcpp->patch_file(
         '/usr/local/hestia/web/inc/main.php',
         "include \$__template_dir . \"header.php\";",
-        "include(\$__template_dir . \"header.php\";\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
+        "include \$__template_dir . \"header.php\";\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
     );
     $hcpp->patch_file(
         '/usr/local/hestia/web/inc/main.php',
