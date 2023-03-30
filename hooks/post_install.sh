@@ -94,7 +94,7 @@ if ( false !== strpos( $hcpp->run( 'list-sys-config json' )['config']['VERSION']
     $hcpp->patch_file(
         '/usr/local/hestia/web/inc/main.php',
         "require_once dirname(__FILE__) . \"/helpers.php\";",
-        "require_once(dirname(__FILE__) . \"/helpers.php\";\nrequire_once(\"/usr/local/hestia/web/pluginable.php\");"
+        "require_once dirname(__FILE__) . \"/helpers.php\";\nrequire_once(\"/usr/local/hestia/web/pluginable.php\");"
     );
     $hcpp->patch_file(
         '/usr/local/hestia/web/inc/main.php',
