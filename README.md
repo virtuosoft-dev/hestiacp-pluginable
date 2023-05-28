@@ -46,7 +46,7 @@ This will automatically be run anytime HestiaCP updates itself. You may wish to 
 
 &nbsp;
 ## Notable Plugins
-A number of plugins that use HestiaCP-Pluginable have been authored by Stephen J. Carnam and can be found under the HCPP prefix on Virtuosoft's GitHub repo:
+A number of plugins that use HestiaCP-Pluginable have been authored by Stephen J. Carnam and can be found under the HCPP prefix on Virtuosoft's GitHub repo (Note: some repos may still be in development):
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
 * [HCPP-MailCatcher](https://github.com/virtuosoft-dev/hcpp-mailcatcher)
