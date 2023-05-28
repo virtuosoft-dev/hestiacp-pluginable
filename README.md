@@ -40,7 +40,7 @@ Lastly, run the post_install.sh script and restart Hestia:
 service hestia restart
 ```
 
-This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.14 in Nginx + Apache2 with Multi-PHP installation options.
+This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.X-v1.7.X in Nginx + Apache2 with Multi-PHP installation options.
 
 ---
 
@@ -186,3 +186,20 @@ or
 ```
 : > /tmp/hcpp.log
 ```
+
+#### Support the creator
+You can help this author's open source development endeavors by donating any amount to Stephen J. Carnam @ Virtuosoft. Your donation, no matter how large or small helps pay for essential time and resources to create MIT and GPL licensed projects that you and the world can benefit from. Click the link below to donate today :)
+<div>
+         
+
+[<kbd> <br> Donate to this Project <br> </kbd>][KBD]
+
+
+</div>
+
+
+<!---------------------------------------------------------------------------->
+
+[KBD]: https://steveorevo.com/donate
+
+https://steveorevo.com/donate
