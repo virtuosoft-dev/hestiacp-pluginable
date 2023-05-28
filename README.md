@@ -45,6 +45,21 @@ This will automatically be run anytime HestiaCP updates itself. You may wish to 
 ---
 
 &nbsp;
+## Notable Plugins
+A number of plugins that use HestiaCP-Pluginable have been authored by Stephen J. Carnam and can be found under the HCPP prefix on Virtuosoft's GitHub repo:
+
+* [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
+* [HCPP-MailCatcher](https://github.com/virtuosoft-dev/hcpp-mailcatcher)
+* [HCPP-VSCode](https://github.com/virtuosoft-dev/hcpp-vscode)
+* [HCPP-NodeRED](https://github.com/virtuosoft-dev/hcpp-nodered)
+* [HCPP-NodeBB](https://github.com/virtuosoft-dev/hcpp-nodebb)
+* [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
+* [HCPP-Go](https://github.com/virtuosoft-dev/hcpp-go)
+
+
+---
+
+&nbsp;
 ## Creating a plugin
 Plugins live in a folder of their own name within `/usr/local/hestia/plugins` and must contain a file called plugin.php. For instance, an example plugin would be at:
 
