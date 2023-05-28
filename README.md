@@ -216,6 +216,6 @@ You can help this author's open source development endeavors by donating any amo
 
 <!---------------------------------------------------------------------------->
 
-[KBD]: https://steveorevo.com/donate
+[KBD]: https://virtuosoft.com/donate
 
-https://steveorevo.com/donate
+https://virtuosoft.com/donate
