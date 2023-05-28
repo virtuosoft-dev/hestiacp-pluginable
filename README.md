@@ -24,7 +24,7 @@ Then the rest:
 
 ```
 cd /tmp
-wget https://github.com/Steveorevo/hestiacp-pluginable/archive/refs/heads/main.zip
+wget https://github.com/virtuosoft-dev/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
 mv hestiacp-pluginable-main/hooks /etc/hestiacp
 rm -rf hestiacp-pluginable-main
