@@ -420,6 +420,11 @@
             if ( file_exists( $file ) ) {
                 $content = file_get_contents( $file );
                 if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
+
+                    // Backup file before patch with timestamp of patch mm_dd_yyyy_hh_mm
+                    if ( !file_exists( $file . '.bak' ) ) {
+                        copy( $file, $file . '.bak_' . date('m_d_Y_H_i') );
+                    }
                     $content = str_replace( $search, $replace, $content );
                     file_put_contents( $file, $content );
                     $this->log( "Patched $file with $replace");
