@@ -397,13 +397,18 @@
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
-            // if ( strlen( $msg ) > 4096 ) {
-            //     $msg = substr( $msg, 0, 4096 ) . '...';
-            // }
             $msg .= "\n";
-            //error_log( $msg, 3, $logFile );
-            chmod( $logFile, 0666 );
-            file_put_contents( $logFile, $msg, FILE_APPEND );
+
+            // Suppress warnings that can hang the UI (i.e. v-restart-web-backend)
+            $last_err_reporting = error_reporting();
+            error_reporting( E_ALL & ~E_WARNING );
+            try {
+                chmod( $logFile, 0666 );
+                file_put_contents( $logFile, $msg, FILE_APPEND );
+            }catch( Exception $e ) {
+                echo 'An error occured: ' . $e->getMessage();
+            }
+            error_reporting( $last_err_reporting );
         }
 
         /**
