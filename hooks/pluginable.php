@@ -793,7 +793,7 @@
 
             // Create a block to list our plugins
             $block = '<tr>
-                        <td class="vst-text input-label">%label%</td>
+                        <td class="vst-text input-label">%label% %version%</td>
                     </tr>
                     <tr>
                         <td>
@@ -822,9 +822,16 @@
             }else{
                 $label = $name;
             }
+
+            // Extract version if git repo
+            $version = '';
+            if ( file_exists( $p . '/.git' ) ) {
+                $version = shell_exec( "cd $p && git describe --tags --abbrev=0" );
+                $version = '- ' . trim( $version );
+            }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
                 if ( file_exists( $p . '/plugin.php' ) ) {
-                    $item = str_replace( array( '%label%', '%name%' ), array( $label, $name ), $block );
+                    $item = str_replace( array( '%label%', '%name%', '%version%' ), array( $label, $name, $version ), $block );
                     if ( strpos( $p, '.disabled') === false) {
                         $item = str_replace( 'value="yes"', 'value="yes" selected=true', $item );
                     }else{
