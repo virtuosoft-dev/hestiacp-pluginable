@@ -787,7 +787,9 @@
 
             // Create a block to list our plugins
             $block = '<div class="u-mb10">
-                        <label for="hcpp_%name%" class="form-label">%label% %version%</label>
+                        <label for="hcpp_%name%" class="form-label">
+                          %label% <style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                        </label>
                         <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
@@ -803,7 +805,9 @@
 
             // Create a block to list our plugins
             $block = '<tr>
-                        <td class="vst-text input-label">%label% %version%</td>
+                        <td class="vst-text input-label">
+                          %label% <style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                        </td>
                     </tr>
                     <tr>
                         <td>
