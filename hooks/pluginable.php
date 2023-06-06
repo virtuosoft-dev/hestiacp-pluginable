@@ -788,7 +788,7 @@
             // Create a block to list our plugins
             $block = '<div class="u-mb10">
                         <label for="hcpp_%name%" class="form-label">
-                          %label% <style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                          %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
                         </label>
                         <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
                           <option value="no">No</option>
@@ -806,7 +806,7 @@
             // Create a block to list our plugins
             $block = '<tr>
                         <td class="vst-text input-label">
-                          %label% <style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                          %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
                         </td>
                     </tr>
                     <tr>
@@ -841,8 +841,7 @@
             $version = '';
             if ( file_exists( $p . '/.git' ) ) {
                 $version = trim( $hcpp->run( 'invoke-plugin get_plugin_version ' . escapeshellarg( $p ) ) );
-                $hcpp->log('version ' . $version  . ' found for ' . $p);
-                $version = '- ' . trim( $version );
+                $version = trim( $version );
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
                 if ( file_exists( $p . '/plugin.php' ) ) {
