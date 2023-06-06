@@ -806,7 +806,7 @@
             // Create a block to list our plugins
             $block = '<tr>
                         <td class="vst-text input-label">
-                          %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                          %label% <span style="font-size:x-small;font-weight:lighter;"> (%version%)</span>
                         </td>
                     </tr>
                     <tr>
