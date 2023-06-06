@@ -502,7 +502,7 @@
                         $installed_version = shell_exec( 'cd ' . $subfolder . ' && git describe --tags --abbrev=0' );
                         $installed_version = trim( $installed_version );
                         $latest_version = $this->find_latest_repo_tag( $url );
-                        if ( $installed_version != $latest_version ) {
+                        if ( $installed_version != $latest_version && $latest_version != '' ) {
 
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
@@ -525,7 +525,7 @@
          */
         public function find_latest_repo_tag( $url ) {
             $this->log( 'Finding latest release tag for ' . $url );
-            
+
             // Execute the git ls-remote command
             $command = "git ls-remote --tags --sort=\"version:refname\" $url";
             exec($command, $output);
@@ -550,6 +550,7 @@
 
             // Get the last element as a string
             $latestRelease = end($finalTags);
+            $this->log( 'Found latest release tag: ' . $latestRelease );
             return $latestRelease;
         }
 
