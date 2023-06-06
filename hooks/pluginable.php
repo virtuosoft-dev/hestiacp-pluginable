@@ -509,7 +509,7 @@
                             $cmd .= ' && git clean -f -d';
                             $cmd .= ' && git fetch --all';
                             $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
-                            $this->log( 'Update ' . $subfolder . ' from ' . $installed_version . ' to ' . $latest_version . '...' );
+                            $this->log( 'Update ' . $subfolder . ' from ' . $installed_version . ' to ' . $latest_version);
                             $this->log( shell_exec( $cmd ) );
                         }
                     }
@@ -524,6 +524,7 @@
          * @return string The latest release tag.
          */
         public function find_latest_repo_tag( $url ) {
+            $this->log( 'Finding latest release tag for ' . $url );
             
             // Execute the git ls-remote command
             $command = "git ls-remote --tags --sort=\"version:refname\" $url";
