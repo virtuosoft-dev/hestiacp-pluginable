@@ -877,9 +877,10 @@
         return $args;
     });
 
-    // Check for updates every two minutes in logging mode
+    // Frequently check for updates in logging mode
     if ( $hcpp->logging ) {
-        $hcpp->add_action( 'priv_update_sys_queue', function( $args ) {
+        $hcpp->add_action( 'priv_update_sys_rrd', function( $args ) { // every 5 minutes
+        //$hcpp->add_action( 'priv_update_sys_queue', function( $args ) { // every 2 minutes
             global $hcpp;
             $hcpp->update_plugins();
             return $args;
