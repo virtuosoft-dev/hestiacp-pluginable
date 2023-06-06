@@ -716,7 +716,7 @@
         }
         return $args;
     });
-    
+
     // Disable/enable/uninstall plugins via trusted command
     $hcpp->add_action( 'invoke_plugin', function( $args ) {
         if ( count( $args ) < 3 ) return $args;
@@ -837,6 +837,7 @@
             $version = '';
             if ( file_exists( $p . '/.git' ) ) {
                 $version = trim( $hcpp->run( 'invoke-plugin get_plugin_version ' . escapeshellarg( $p ) ) );
+                $hcpp->log('version ' . $version  . ' found for ' . $p);
                 $version = '- ' . trim( $version );
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
