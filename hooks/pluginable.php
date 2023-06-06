@@ -826,7 +826,7 @@
             // Extract version if git repo
             $version = '';
             if ( file_exists( $p . '/.git' ) ) {
-                $version = shell_exec( "cd $p && git describe --tags --abbrev=0" );
+                $version = shell_exec( 'cd "' . $p . '" && git describe --tags --abbrev=0' );
                 $version = '- ' . trim( $version );
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
