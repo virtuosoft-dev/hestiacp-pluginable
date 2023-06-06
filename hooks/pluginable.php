@@ -478,19 +478,21 @@
             $pluginsDir = '/usr/local/hestia/plugins';
             $subfolders = glob( $pluginsDir . '/*', GLOB_ONLYDIR );
             foreach ( $subfolders as $subfolder ) {
+
+                // Skip disabled plugins
+                if ( $this->str_ends_with( $subfolder, '.disabled' ) ) {
+                    continue;
+                }
                 $pluginFilePath = $subfolder . '/plugin.php';
                 $pluginGitFolder = $subfolder . '/.git';
                 if ( file_exists( $pluginFilePath ) && is_dir( $pluginGitFolder ) ) {
-                    // Read the first 5 lines of the file
                     $fileLines = file($pluginFilePath);
-                    $firstFiveLines = array_slice($fileLines, 0, 5);                    
 
                     // Search for the line containing 'Plugin URI:'
                     $url = '';
                     foreach ($fileLines as $line) {
                         if (strpos($line, 'Plugin URI:') !== false) {
                             $url = trim( $this->delLeftMost( $line, 'Plugin URI:' ) );
-                            echo $url . "\n";
                             break;
                         }
                     }

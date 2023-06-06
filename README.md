@@ -183,11 +183,11 @@ While the `.ports` files are in Nginx conf format for convenience, any applicati
 
 &nbsp;
 ### Automatic Updates
-Plugins can leverage obtaining automatic updates from publicly hosted git repos (i.e. GitHub, GitLab, etc.). To implement this feature is simple; just provide a valid, publicly accesible `Plugin URI` field in the header of the `plugin.php` file. The most recent tag release that matches the nomenclature of `v#.#.#` (i.e. `v1.0.0`) will be queried and obtained on a daily basis. Matches that fail the expression (i.e. `v1.0.0-beta1` or `v2.0.1b3`) will be ignored.
+Plugins can leverage obtaining automatic updates from publicly hosted git repos (i.e. GitHub, GitLab, etc.). Plugins that are disabled from the configuration panel will not update. To implement this feature is simple; just provide a valid, publicly accesible `Plugin URI` field in the header of the `plugin.php` file. The most recent tag release that matches the nomenclature of `v#.#.#` (i.e. `v1.0.0`) will be queried and obtained on a daily basis. Matches that fail the expression (i.e. `v1.0.0-beta1` or `v2.0.1b3`) will be ignored.
 
 The plugin folder must have been initially installed using git and therefore should have a .git folder present for automatic update checking to work. When the HCPP object's `public $logging = true` option is set (see next section ***Debug Logging***); update checking will occur at a higher frequency of every 5 minutes (vs once daily) to assist with testing.
 
-An optional update script can be included with the plugin. Unlike the install and uninstall scripts; the update script does not need to be registered. The update script will be passed two parameters; the current installed version (i.e. `v1.0.0`) and the newly installed version (i.e. `v2.0.0`). The optional update script is executed if present and only after after the repo has been updated. The update script feature allows plugin authors to make critical changes and apply patches if necessary to accomodate specific upgrade version migrations.
+An optional update script can be included with the plugin. Unlike the install and uninstall scripts; the update script does not need to be registered. Updates do not trigger the install script; but you may wish to invoke it on update's behalf. The update script will be passed two parameters; the current installed version (i.e. `v1.0.0`) and the newly installed version (i.e. `v2.0.0`). The optional update script is executed if present and only after after the repo has been updated. The update script feature allows plugin authors to make critical changes and apply patches if necessary to accomodate specific upgrade version migrations.
 
 &nbsp;
 ### Debug Logging
