@@ -511,6 +511,12 @@
                             $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
                             $this->log( 'Update ' . $subfolder . ' from ' . $installed_version . ' to ' . $latest_version);
                             $this->log( shell_exec( $cmd ) );
+
+                            // Run the update script if it exists
+                            if ( file_exists( $subfolder . '/update' ) ) {
+                                $cmd = 'cd ' . $subfolder . ' && ./update ' . escapeshellarg( $installed_version ) . ' ' . escapeshellarg( $latest_version  );
+                                $this->log( shell_exec( $cmd ) );
+                            }
                         }
                     }
                 }
