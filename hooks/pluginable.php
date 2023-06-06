@@ -470,6 +470,87 @@
             shell_exec( $cmd );
         }
 
+        /**
+         * Update plugins from their given git repo.
+         */
+        function update_plugins() {
+            $pluginsDir = '/usr/local/hestia/plugins';
+            $subfolders = glob( $pluginsDir . '/*', GLOB_ONLYDIR );
+            foreach ( $subfolders as $subfolder ) {
+                $pluginFilePath = $subfolder . '/plugin.php';
+                $pluginGitFolder = $subfolder . '/.git';
+                if ( file_exists( $pluginFilePath ) && is_dir( $pluginGitFolder ) ) {
+                    // Read the first 5 lines of the file
+                    $fileLines = file($pluginFilePath);
+                    $firstFiveLines = array_slice($fileLines, 0, 5);                    
+
+                    // Search for the line containing 'Plugin URI:'
+                    $url = '';
+                    foreach ($fileLines as $line) {
+                        if (strpos($line, 'Plugin URI:') !== false) {
+                            $url = trim( $this->delLeftMost( $line, 'Plugin URI:' ) );
+                            echo $url . "\n";
+                            break;
+                        }
+                    }
+                    
+                    // If the plugin is a git repo with a URL, update it
+                    if ( $url != '' ) {
+
+                        // Get the installed version number of the plugin
+                        $installed_version = shell_exec( 'cd ' . $subfolder . ' && git describe --tags --abbrev=0' );
+                        $installed_version = trim( $installed_version );
+                        $latest_version = $this->find_latest_repo_tag( $url );
+                        if ( $installed_version != $latest_version ) {
+
+                            // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
+                            $cmd = 'cd ' . $subfolder . ' && git reset --hard';
+                            $cmd .= ' && git clean -f -d';
+                            $cmd .= ' && git fetch --all';
+                            $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
+                            $this->log( "Updating plugin $subfolder from $installed_version to $latest_version" );
+                            $this->log( shell_exec( $cmd ) );
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Find the latest git repo's non-beta release tag.
+         * 
+         * @param string $url The git repo URL.
+         * @return string The latest release tag.
+         */
+        public function find_latest_repo_tag( $url ) {
+            
+            // Execute the git ls-remote command
+            $command = "git ls-remote --tags --sort=\"version:refname\" $url";
+            exec($command, $output);
+
+            // Extract the last column into an array
+            $tags = array();
+            foreach ($output as $line) {
+                $columns = preg_split('/\s+/', $line);
+                $tag = end($columns);
+                $tags[] = $tag;
+            }
+
+            // Clean the tags by removing preceding 'refs/tags/' if present
+            $cleanTags = array_map(function ($tag) {
+                $tag = str_replace('refs/tags/', '', $tag);
+                return $tag;
+            }, $tags);
+
+            // Filter out tags that don't conform to the pattern #.#.#
+            $pattern = '/^\d+\.\d+\.\d+$/';
+            $finalTags = preg_grep($pattern, $cleanTags);
+
+            // Get the last element as a string
+            $latestRelease = end($finalTags);
+            return $latestRelease;
+        }
+
         // *************************************************************************
         // * Conveniently used string parsing and query functions used by this and
         // * other plugins. Linear version, lifted from github/steveorevo/GString
@@ -762,4 +843,22 @@
         $args = $hcpp->do_action( 'show_error_panel', $args );
         return $args;
     });
+
+    // Check for updates to plugins daily
+    $hcpp->add_action( 'update_sys_queue', function( $args ) {
+        global $hcpp;
+        if (is_array($args) && count($args) === 1 && $args[0] === 'daily') {
+            $hcpp->update_plugins();
+        }
+        return $args;
+    });
+
+    // Check for updates every five minutes in logging mode
+    if ( $hcpp->logging ) {
+        $hcpp->add_action( 'priv_update_sys_rrd', function( $args ) {
+            global $hcpp;
+            $hcpp->update_plugins();
+            return $args;
+        });
+    }
 }
