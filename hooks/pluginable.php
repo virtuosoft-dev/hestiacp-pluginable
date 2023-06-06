@@ -753,7 +753,7 @@
     $hcpp->add_action( 'invoke_plugin', function( $args ) {
         if ( $args[0] == 'get_plugin_version' ) {
             $plugin = $args[1];
-            $version = shell_exec( 'cd "/usr/local/hestia/plugins/' . $plugin . '" && git describe --tags --abbrev=0' );
+            $version = shell_exec( 'cd "' . $plugin . '" && git describe --tags --abbrev=0' );
             echo $version;
         }
         return $args;
