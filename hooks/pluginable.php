@@ -474,6 +474,7 @@
          * Update plugins from their given git repo.
          */
         function update_plugins() {
+            $this->log( 'Running update plugins...' );
             $pluginsDir = '/usr/local/hestia/plugins';
             $subfolders = glob( $pluginsDir . '/*', GLOB_ONLYDIR );
             foreach ( $subfolders as $subfolder ) {
@@ -508,7 +509,7 @@
                             $cmd .= ' && git clean -f -d';
                             $cmd .= ' && git fetch --all';
                             $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
-                            $this->log( "Updating plugin $subfolder from $installed_version to $latest_version" );
+                            $this->log( 'Update ' . $subfolder . ' from ' . $installed_version . ' to ' . $latest_version . '...' );
                             $this->log( shell_exec( $cmd ) );
                         }
                     }
