@@ -686,16 +686,6 @@
         return $args;
     });
     
-    // Throw new_web_domain_ready via v-invoke-plugin hook
-    $hcpp->add_action( 'invoke_plugin', function( $args ) {
-        global $hcpp;
-        if ( $args[0] == 'new_web_domain_ready' ) {
-            array_shift( $args );
-            $hcpp->do_action( 'new_web_domain_ready', $args );
-        }
-        return $args;
-    });
-
     // Delete the ports file when the domain is deleted
     $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
         global $hcpp;
@@ -717,6 +707,16 @@
         return $args;
     });
 
+    // Throw new_web_domain_ready via v-invoke-plugin hook
+    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+        global $hcpp;
+        if ( $args[0] == 'new_web_domain_ready' ) {
+            array_shift( $args );
+            $hcpp->do_action( 'new_web_domain_ready', $args );
+        }
+        return $args;
+    });
+    
     // Disable/enable/uninstall plugins via trusted command
     $hcpp->add_action( 'invoke_plugin', function( $args ) {
         if ( count( $args ) < 3 ) return $args;
@@ -745,6 +745,16 @@
                     $hcpp->run_uninstall_scripts();
                 }
                 break;
+        }
+        return $args;
+    });
+
+    // Get plugin version via trusted command
+    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+        if ( $args[0] == 'get_plugin_version' ) {
+            $plugin = $args[1];
+            $version = shell_exec( 'cd "/usr/local/hestia/plugins/' . $plugin . '" && git describe --tags --abbrev=0' );
+            echo $version;
         }
         return $args;
     });
@@ -826,7 +836,7 @@
             // Extract version if git repo
             $version = '';
             if ( file_exists( $p . '/.git' ) ) {
-                $version = shell_exec( 'cd "' . $p . '" && git describe --tags --abbrev=0' );
+                $version = trim( $hcpp->run( 'invoke-plugin get_plugin_version ' . escapeshellarg( $p ) ) );
                 $version = '- ' . trim( $version );
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
