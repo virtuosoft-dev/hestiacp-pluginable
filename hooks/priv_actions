@@ -3,11 +3,11 @@
 /**
  * Intercept privilege (sudo) calls to Hestia's bin/ directory and invoke plugin actions/filters
  * before executing the original command.
- * 
+ *
  * @version 1.0.0
  * @license GPL-3.0
  * @link https://github.com/steveorevo/hestiacp-pluginable
- * 
+ *
  */
 
 // Check if we've already filtered the arguments
@@ -15,12 +15,11 @@ if ( getenv('HCPPFILTERED') == '1' ) return;
 
 // Remove the first argument, which is the path to the script
 array_shift( $argv );
-      
+
 // Obtain the API command and parameters
 $cmd = '';
 $params = [];
 foreach( $argv as $a ) {
-
     // Isolate the API command name
     if ( strpos( $a, '/usr/local/hestia/bin/' ) !== false ) {
         $cmd = str_replace( '/usr/local/hestia/bin/', '', $a );
@@ -34,7 +33,7 @@ foreach( $argv as $a ) {
     }
 }
 
-// Throw our priv action filter, strip v- prefix, and replace dashes with underscores 
+// Throw our priv action filter, strip v- prefix, and replace dashes with underscores
 require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp;
 $event = $hcpp->delLeftMost( $cmd, 'v-' );
