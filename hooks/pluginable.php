@@ -377,6 +377,16 @@
                 return $output;
             }
         }
+        
+        /**
+         * Run an arbituary command as the given user.
+         *
+         * @param string $user The Linux user account to run the given command as.
+         * @param string $cmd The command to execute.
+         * @return string The output of the command.
+         */
+         public function runuser( $user, $cmd ) {
+         }
 
         /**
          * Write a log message to the /tmp/hcpp.log file. Why here? Because
