@@ -386,6 +386,15 @@
          * @return string The output of the command.
          */
          public function runuser( $user, $cmd ) {
+            $cmd = $this->do_action( 'hcpp_runuser', $cmd );
+            $cmd = "runuser -s /bin/bash -l $user -c " . escapeshellarg( 'cd /home/$user && ' . $cmd );
+            global $hcpp;
+            $hcpp->log( $cmd );
+            $cmd = $this->do_action( 'hcpp_runuser_exec', $cmd );
+            $result = shell_exec( $cmd );
+            $cmd = $this->do_action( 'hcpp_runuser_result', $cmd );
+            $hcpp->log( $result );
+            return $result;
          }
 
         /**
