@@ -51,9 +51,11 @@ A number of plugins that use HestiaCP-Pluginable have been authored by [Stephen 
 *Important Note: The following plugins are dependent on [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp), ensure you install [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp) first!*
 
 * [HCPP-MailCatcher](https://github.com/virtuosoft-dev/hcpp-mailcatcher)
+* [HCPP-Collabora](https://github.com/virtuosoft-dev/hcpp-collabora)
 * [HCPP-NodeRED](https://github.com/virtuosoft-dev/hcpp-nodered)
 * [HCPP-NodeBB](https://github.com/virtuosoft-dev/hcpp-nodebb)
 * [HCPP-VSCode](https://github.com/virtuosoft-dev/hcpp-vscode)
+* [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
 * [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
 * [HCPP-Go](https://github.com/virtuosoft-dev/hcpp-go)
 
