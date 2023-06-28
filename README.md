@@ -7,7 +7,7 @@ Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like
 * Ubuntu Linux OS
 
 ## Installation
-First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. The files in the following folders will be altered during installation and after every update:
+First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `main.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
 
 * /usr/local/hestia/data/templates/web/php-fpm
 * /usr/local/hestia/web/templates
