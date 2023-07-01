@@ -915,7 +915,7 @@
     }
     
     // Ensure we reload nginx to read our plugin configurations (req. by NodeApp, Collabora, etc.)
-    $hcpp->add_action( 'post_restart_proxy', function( $args ) {
+    $hcpp->add_action( 'post_restart_service', function( $args ) {
             global $hcpp;
             $cmd = '(sleep 5 && service nginx reload) > /dev/null 2>&1 &';
             $cmd = $hcpp->do_action( 'hcpp_nginx_reload', $cmd );
