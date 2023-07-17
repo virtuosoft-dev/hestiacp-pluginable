@@ -90,8 +90,8 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    'require_once dirname(__FILE__) . "/helpers.php";',
-    'require_once dirname(__FILE__) . "/helpers.php";\nrequire_once("/usr/local/hestia/web/pluginable.php");'
+    "require_once dirname(__FILE__) . \"/helpers.php\";",
+    "require_once dirname(__FILE__) . \"/helpers.php\";\nrequire_once(\"/usr/local/hestia/web/pluginable.php\");"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
@@ -121,7 +121,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     'include $__template_dir . "footer.php";',
-    "include \$__template_dir . \"footer.php\"\n\t\$args['content'] = ob_get_clean();\n\techo \$hcpp->do_action('render_footer', \$args)['content'];\n"
+    "include \$__template_dir . \"footer.php\";\n\t\$args['content'] = ob_get_clean();\n\techo \$hcpp->do_action('render_footer', \$args)['content'];\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
