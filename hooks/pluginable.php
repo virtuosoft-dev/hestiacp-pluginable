@@ -888,13 +888,6 @@
         return $args;
     });
 
-    // Hestia 1.6 to 1.7 compatibility
-    $hcpp->add_action( 'show_alert_message', function( $args ) {
-        global $hcpp;
-        $args = $hcpp->do_action( 'show_error_panel', $args );
-        return $args;
-    });
-
     // Check for updates to plugins daily
     $hcpp->add_action( 'update_sys_queue', function( $args ) {
         global $hcpp;
