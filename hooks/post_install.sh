@@ -125,8 +125,8 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    "\t} else {\n\t\treturn true;\n    }",
-    "\t} else {\n        global \$hcpp;\n        \$hcpp->do_action('csrf_verified');\n        return true;\n    }"
+    "\t} else {\n\t\treturn true;\n\t}",
+    "\t} else {\n\t\tglobal \$hcpp;\n\t\t\$hcpp->do_action('csrf_verified');\n\t\treturn true;\n\t}"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
