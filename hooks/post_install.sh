@@ -101,7 +101,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     'include $__template_dir . "header.php";',
-    "include $__template_dir . \"header.php\";\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
+    "include \$__template_dir . \"header.php\";\n    \$args = [ 'TAB' => \$TAB, 'page' => \$page, 'user' => \$user, 'content' => ob_get_clean() ];\n    echo \$hcpp->do_action('render_header', \$args)['content'];\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
@@ -121,7 +121,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     'include $__template_dir . "footer.php";',
-    "include $__template_dir . \"footer.php\"\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
+    "include \$__template_dir . \"footer.php\"\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('render_footer', \$args)['content'];\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
@@ -130,13 +130,13 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    "function show_alert_message($data) {",
-    "function show_alert_message($data) {\n    ob_start();\n"
+    "function show_alert_message(\$data) {",
+    "function show_alert_message(\$data) {\n    ob_start();\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
-    "\t\t\t$msgText,\n\t\t);\n\t}\n",
-    "\t\t\t$msgText,\n\t\t);\n\t}\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('show_alert_message', \$args)['content'];\n",
+    "\t\t\t\$msgText,\n\t\t);\n\t}\n",
+    "\t\t\t\$msgText,\n\t\t);\n\t}\n    \$args['content'] = ob_get_clean();\n    echo \$hcpp->do_action('show_alert_message', \$args)['content'];\n",
 );
 
 // api/index.php
