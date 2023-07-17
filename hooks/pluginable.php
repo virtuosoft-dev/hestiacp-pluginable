@@ -439,8 +439,13 @@
          * @param string $file The file to patch.
          * @param string $search The search string.
          * @param string $replace The replace string.
+         * @param boolean $retry_tabs If true, retry with spaces instead of tabs.
          */ 
-        public function patch_file( $file, $search, $replace ) {
+        public function patch_file( $file, $search, $replace, $retry_tabs = false ) {
+            if ( $retry_tabs ) {
+                $search = str_replace( "\t", '    ', $search );
+                $replace = str_replace( "\t", '    ', $replace );
+            }
             if ( file_exists( $file ) ) {
                 $content = file_get_contents( $file );
                 if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
@@ -456,7 +461,13 @@
 
                 // Report patch_file failures, Hestia version may not be compatible
                 if (!strstr( $content, $replace ) && !strstr( $content, $search ) ) {
-                    $this->log( "!!! Failed to patch $file with $replace" );
+                    if ( $retry_tabs ) {
+
+                        // Try second time with spaces instead of tabs
+                        $this->patch_file( $file, $search, $replace, true );
+                    }else{
+                        $this->log( "!!! Failed to patch $file with $replace" );
+                    }
                 }
                 
             }else{
