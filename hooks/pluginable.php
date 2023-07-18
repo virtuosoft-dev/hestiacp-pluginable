@@ -925,4 +925,13 @@
             $cmd = $hcpp->do_action( 'hcpp_nginx_reload', $cmd );
             shell_exec( $cmd );
     }, 50 );
+
+    // Restore jquery
+    $hcpp->add_action( 'render_header', function( $args ) {
+        $content = $args['content'];
+        $inject = '<head><script src="/js/dist/jquery-3.7.0.min.js"></script>';
+        $content = str_replace( '<head>', $inject, $content );
+        $args['content'] = $content;
+        return $args;
+    } );
 }
