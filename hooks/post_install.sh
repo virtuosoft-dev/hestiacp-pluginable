@@ -12,6 +12,7 @@
 
 // Copy pluginable.php to /usr/local/hestia/web/pluginable.php
 copy( '/etc/hestiacp/hooks/pluginable.php', '/usr/local/hestia/web/pluginable.php' );
+shell_exec('cd /usr/local/hestia/web/js/dist && wget https://code.jquery.com/jquery-3.7.0.min.js' );
 
 // Ensure log is present and writable when needed
 if ( ! file_exists( '/tmp/hcpp.log' ) ) {
