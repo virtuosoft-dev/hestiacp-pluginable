@@ -131,7 +131,7 @@ $hcpp->patch_file(
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "function show_alert_message(\$data) {",
-    "function show_alert_message(\$data) {\n\tob_start();\n"
+    "function show_alert_message(\$data) {\n\tglobal \$hcpp;\n\tob_start();\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
