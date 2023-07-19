@@ -724,6 +724,22 @@
         return $args;
     });
 
+    // Throw hcpp_rebooted when the system has been started
+    $hcpp->add_action( 'priv_update_sys_queue', function( $args ) {
+        if ( isset( $args[0] ) && $args[0] == 'restart' ) {
+                
+            // Check last reboot time
+            $file = '/usr/local/hestia/data/hcpp/last_reboot.txt';
+            $last = shell_exec("who -b");
+            if ( !file_exists( $file ) || file_get_contents( $file ) !== $last ) {
+                file_put_contents( $file, $last );
+                global $hcpp;
+                $hcpp->do_action( 'hcpp_rebooted' );
+            }
+        }
+        return $args;
+    });
+
     // Delete the ports file when the domain is deleted
     $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
         global $hcpp;
