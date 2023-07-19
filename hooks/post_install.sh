@@ -147,4 +147,4 @@ $hcpp->patch_file(
     'define("HESTIA_CMD", "/etc/hestiacp/hooks/bin_actions sudo ");'
 );
 
-$hcpp->do_action( 'post_install' );
+$hcpp->do_action( 'hcpp_post_install' );
