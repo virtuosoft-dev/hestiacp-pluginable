@@ -121,7 +121,7 @@ Its not recommended to alter the existing files that HestiaCP comes with because
 
 &nbsp;
 ### Invoking Plugins via Hestia API
-Plugins also have the ability to execute code on behalf of invoking Hestia's API. An additional bin file called `v-invoke-plugin` can take an arbitrary number of arguments and will in turn execute the `invoke_plugin` action. A plugin author can subscribe to this message and execute custom code. Results can be returned, altering any values passed to other subscribers; or an author can echo results back to the caller as clear text or optionally, as JSON (or as JSON if an argument contains the string `json` as by convention like other Hestia API bin commands).
+Plugins also have the ability to execute code on behalf of invoking Hestia's API. An additional bin file called `v-invoke-plugin` can take an arbitrary number of arguments and will in turn execute the `hcpp_invoke_plugin` action. A plugin author can subscribe to this message and execute custom code. Results can be returned, altering any values passed to other subscribers; or an author can echo results back to the caller as clear text or optionally, as JSON (or as JSON if an argument contains the string `json` as by convention like other Hestia API bin commands).
 <br><br>
 ### Calling Other API Methods
 You can run any of HestiaCP's API commands using the HCPP object's `run` method. For example, the following code will return an object (JSON already decoded) of all the users:

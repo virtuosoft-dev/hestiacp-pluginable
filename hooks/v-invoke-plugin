@@ -8,4 +8,4 @@ global $hcpp;
 
 // Pass along any arguments
 array_shift( $argv );
-$hcpp->do_action( 'invoke_plugin', $argv );
+$hcpp->do_action( 'hcpp_invoke_plugin', $argv );

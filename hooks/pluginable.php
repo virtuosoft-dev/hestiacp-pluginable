@@ -703,7 +703,7 @@
         }
     }
 
-    // Throw one-time new_web_domain_ready via v-invoke-plugin hook when
+    // Throw one-time hcpp_new_domain_ready via v-invoke-plugin hook when
     // conf folder and public_html folders are first accessible
     $hcpp->add_action( 'pre_add_fs_directory', function( $args ) {
         global $hcpp;
@@ -723,7 +723,7 @@
         shell_exec( $cmd );
         return $args;
     });
-    
+
     // Delete the ports file when the domain is deleted
     $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
         global $hcpp;
@@ -745,18 +745,18 @@
         return $args;
     });
 
-    // Throw new_web_domain_ready via v-invoke-plugin hook
-    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+    // Throw hcpp_new_domain_ready via v-invoke-plugin hook
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
         global $hcpp;
-        if ( $args[0] == 'new_web_domain_ready' ) {
+        if ( $args[0] == 'hcpp_new_domain_ready' ) {
             array_shift( $args );
-            $hcpp->do_action( 'new_web_domain_ready', $args );
+            $hcpp->do_action( 'hcpp_new_domain_ready', $args );
         }
         return $args;
     });
 
     // Disable/enable/uninstall plugins via trusted command
-    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
         if ( count( $args ) < 3 ) return $args;
         if ( $args[0] != 'hcpp_config' ) return $args;
         $v = $args[1];
@@ -788,7 +788,7 @@
     });
 
     // Get plugin version via trusted command
-    $hcpp->add_action( 'invoke_plugin', function( $args ) {
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
         if ( $args[0] == 'get_plugin_version' ) {
             $plugin = $args[1];
             $version = shell_exec( 'cd "' . $plugin . '" && git describe --tags --abbrev=0' );
