@@ -254,7 +254,15 @@
                 $args[] = func_get_arg($a);
 
             foreach ( $this->hcpp_filters[$tag] as $func ) {
-                $arg = call_user_func_array( $func, $args );
+                try {
+                    $arg = call_user_func_array( $func, $args );
+                } catch (Exception $e) {
+                    
+                    // Echo out the error message if an exception occurs
+                    echo 'Error: do_action failed ' . $e->getMessage();
+                    $this->log( 'Error: do_action failed ' . $e->getMessage() );
+                }
+                
                 if ($arg != null) {
                     $args = array();
                     if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
