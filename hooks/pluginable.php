@@ -726,16 +726,14 @@
 
     // Throw hcpp_rebooted when the system has been started
     $hcpp->add_action( 'priv_update_sys_queue', function( $args ) {
-        if ( isset( $args[0] ) && $args[0] == 'restart' ) {
-                
-            // Check last reboot time
-            $file = '/usr/local/hestia/data/hcpp/last_reboot.txt';
-            $last = shell_exec("who -b");
-            if ( !file_exists( $file ) || file_get_contents( $file ) !== $last ) {
-                file_put_contents( $file, $last );
-                global $hcpp;
-                $hcpp->do_action( 'hcpp_rebooted' );
-            }
+               
+        // Check last reboot time
+        $file = '/usr/local/hestia/data/hcpp/last_reboot.txt';
+        $last = shell_exec("who -b");
+        if ( !file_exists( $file ) || file_get_contents( $file ) !== $last ) {
+            file_put_contents( $file, $last );
+            global $hcpp;
+            $hcpp->do_action( 'hcpp_rebooted' );
         }
         return $args;
     });
@@ -833,47 +831,22 @@
         $before = $hcpp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
         $after = $hcpp->getRightMost( $content, 'name="v_firewall"' );
 
-        if ( false !== strpos( $hcpp->run( 'list-sys-config json' )['config']['VERSION'], '1.7.' ) ) {
+        // Parse the page content under HestiaCP 1.6.X
+        $before .= $hcpp->getLeftMost( $after, '</div>' ) . '</div>';
+        $after = $hcpp->delLeftMost( $after, '</div>' );
 
-            // Parse the page content under HestiaCP 1.6.X
-            $before .= $hcpp->getLeftMost( $after, '</div>' ) . '</div>';
-            $after = $hcpp->delLeftMost( $after, '</div>' );
+        // Create a block to list our plugins
+        $block = '<div class="u-mb10">
+                    <label for="hcpp_%name%" class="form-label">
+                        %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
+                    </label>
+                    <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                        <option value="uninstall">Uninstall</option>
+                    </select>
+                    </div>';
 
-            // Create a block to list our plugins
-            $block = '<div class="u-mb10">
-                        <label for="hcpp_%name%" class="form-label">
-                          %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
-                        </label>
-                        <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
-                          <option value="no">No</option>
-                          <option value="yes">Yes</option>
-                          <option value="uninstall">Uninstall</option>
-                        </select>
-                      </div>';
-
-        }else{
-
-            // Parse the page content under HestiaCP 1.6.X
-            $before .= $hcpp->getLeftMost( $after, '</tr>' ) . '</tr>';
-            $after = $hcpp->delLeftMost( $after, '</tr>' );
-
-            // Create a block to list our plugins
-            $block = '<tr>
-                        <td class="vst-text input-label">
-                          %label% <span style="font-size:x-small;font-weight:lighter;"> (%version%)</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <select class="vst-list" name="hcpp_%name%">
-                                <option value="no">No</option>
-                                <option value="yes">Yes</option>
-                                <option value="uninstall">Uninstall</option>
-                            </select>
-                            <br><br>
-                        </td>
-                    </tr>';
-        }
 
         // List the plugins 
         $plugins = glob( '/usr/local/hestia/plugins/*' );
