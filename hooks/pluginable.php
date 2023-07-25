@@ -820,7 +820,7 @@
     });
 
     // List plugins in HestiaCP's Configure Server UI
-    $hcpp->add_action( 'render_page', function( $args ) {
+    $hcpp->add_action( 'hcpp_render_page', function( $args ) {
         global $hcpp;
         $content = $args['content'];
         if ( false == ($args['page'] == 'edit_server' && $args['TAB'] == 'SERVER' ) ) {
@@ -924,7 +924,7 @@
     }, 50 );
 
     // Restore jquery
-    $hcpp->add_action( 'render_header', function( $args ) {
+    $hcpp->add_action( 'hcpp_render_header', function( $args ) {
         $content = $args['content'];
         $inject = '<head><script src="/js/dist/jquery-3.7.0.min.js"></script>';
         $content = str_replace( '<head>', $inject, $content );
