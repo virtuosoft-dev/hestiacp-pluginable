@@ -465,6 +465,10 @@
                     $content = str_replace( $search, $replace, $content );
                     file_put_contents( $file, $content );
                     $this->log( "Patched $file with $replace");
+                }else{
+                    if ( strstr( $content, $replace ) ) {
+                        $this->log( "Already patched $file with $replace" );
+                    }
                 }
 
                 // Report patch_file failures, Hestia version may not be compatible
