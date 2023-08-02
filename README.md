@@ -26,7 +26,7 @@ Then the rest:
 cd /tmp
 wget https://github.com/virtuosoft-dev/hestiacp-pluginable/archive/refs/heads/main.zip
 unzip main.zip
-mv hestiacp-pluginable-main/hooks /etc/hestiacp
+cp -r hestiacp-pluginable-main/hooks/* /etc/hestiacp/hooks/
 rm -rf hestiacp-pluginable-main
 rm main.zip
 ```
