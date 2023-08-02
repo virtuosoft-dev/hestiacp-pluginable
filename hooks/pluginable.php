@@ -513,6 +513,28 @@
         }
 
         /**
+         * Re-apply pluginable when hestiacp core updates
+         */
+        public function update_core() {
+            $detail = $this->run( 'list-sys-info json' );
+            if ( !is_dir( '/usr/local/hestia/data/hcpp/' ) ) {
+                mkdir( '/usr/local/hestia/data/hcpp/', 0755, true );
+            }
+            $hestia = $detail['sysinfo']['HESTIA'];
+            if ( !file_exists( '/usr/local/hestia/data/hcpp/last_hestia.txt' ) ) {
+                file_put_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt', $hestia );
+            }
+            $last_hestia = file_get_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt' );
+            if ( $hestia != $last_hestia ) {
+                $this->log( 'HestiaCP core updated from ' . $last_hestia . ' to ' . $hestia );
+                $cmd = 'cd /etc/hestiacp/hooks && /etc/hestiacp/hooks/post_install.sh && service hestia restart';
+                $cmd = $this->do_action( 'hccp_update_core_cmd', $cmd );
+                shell_exec( $cmd );
+            }
+            file_put_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt', $hestia );
+        }
+
+        /**
          * Update plugins from their given git repo.
          */
         function update_plugins() {
@@ -902,8 +924,9 @@
 
     // Check for updates to plugins daily
     $hcpp->add_action( 'update_sys_queue', function( $args ) {
-        global $hcpp;
         if (is_array($args) && count($args) === 1 && $args[0] === 'daily') {
+            global $hcpp;
+            $hcpp->update_core();
             $hcpp->update_plugins();
         }
         return $args;
@@ -914,6 +937,7 @@
         $hcpp->add_action( 'priv_update_sys_rrd', function( $args ) { // every 5 minutes
         //$hcpp->add_action( 'priv_update_sys_queue', function( $args ) { // every 2 minutes
             global $hcpp;
+            $hcpp->update_core();
             $hcpp->update_plugins();
             return $args;
         });
