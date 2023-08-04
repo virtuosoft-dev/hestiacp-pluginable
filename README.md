@@ -11,6 +11,7 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 
 * /usr/local/hestia/data/templates/web/php-fpm
 * /usr/local/hestia/web/templates
+* /usr/local/hestia/web/inc/
 * /usr/local/hestia/web/api
 * /usr/local/hestia/func
 
