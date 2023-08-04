@@ -813,12 +813,14 @@
         switch( $v ) {
             case 'yes':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
+                    $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
                 $hcpp->run_install_scripts();
                 break;
             case 'no':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                    $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
                     rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
                 }
                 break;
@@ -826,6 +828,7 @@
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
                 }
+                $hcpp->do_action( 'hcpp_plugin_uninstall', $plugin );
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
                     shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
                     $hcpp->run_uninstall_scripts();
