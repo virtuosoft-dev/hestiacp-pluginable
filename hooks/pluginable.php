@@ -849,14 +849,14 @@
     });
 
     // Invoke plugin enabled after plugin is renamed and loaded
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) ) {
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
         if ( $args[0] == 'hcpp_plugin_enabled' ) {
             $plugin = $args[1];
             global $hcpp;
             $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
         }
         return $args;
-    }
+    });
 
     // List plugins in HestiaCP's Configure Server UI
     $hcpp->add_action( 'hcpp_render_page', function( $args ) {
