@@ -814,7 +814,7 @@
             case 'yes':
                 if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
                     rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
-                    $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
+                    $hcpp->run( 'invoke-plugin hcpp_plugin_enabled ' . escapeshellarg( $plugin ) );
                 }
                 $hcpp->run_install_scripts();
                 break;
@@ -847,6 +847,16 @@
         }
         return $args;
     });
+
+    // Invoke plugin enabled after plugin is renamed and loaded
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) ) {
+        if ( $args[0] == 'hcpp_plugin_enabled' ) {
+            $plugin = $args[1];
+            global $hcpp;
+            $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
+        }
+        return $args;
+    }
 
     // List plugins in HestiaCP's Configure Server UI
     $hcpp->add_action( 'hcpp_render_page', function( $args ) {
