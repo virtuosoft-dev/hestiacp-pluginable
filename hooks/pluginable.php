@@ -840,7 +840,7 @@
 
     // Get plugin version via trusted command
     $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( $args[0] == 'get_plugin_version' ) {
+        if ( $args[0] == 'hcpp_get_plugin_version' ) {
             $plugin = $args[1];
             $version = shell_exec( 'cd "' . $plugin . '" && git describe --tags --abbrev=0' );
             echo $version;
@@ -914,7 +914,7 @@
             // Extract version if git repo
             $version = '';
             if ( file_exists( $p . '/.git' ) ) {
-                $version = trim( $hcpp->run( 'invoke-plugin get_plugin_version ' . escapeshellarg( $p ) ) );
+                $version = trim( $hcpp->run( 'invoke-plugin hcpp_get_plugin_version ' . escapeshellarg( $p ) ) );
                 $version = trim( $version );
             }
             if ( is_dir( $p ) && ($p[0] != '.') ) {
