@@ -762,6 +762,8 @@
     $hcpp->add_action( 'priv_update_sys_queue', function( $args ) {
                
         // Check last reboot time
+        if ( ! isset( $args[0] ) ) return $args; 
+        if ( $args[0] != 'restart' ) return $args;
         $file = '/usr/local/hestia/data/hcpp/last_reboot.txt';
         $last = shell_exec("who -b");
         if ( !file_exists( $file ) || file_get_contents( $file ) !== $last ) {
