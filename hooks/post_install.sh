@@ -106,13 +106,23 @@ $hcpp->patch_file(
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
+    "// Panel",
+    "// Panel\n\tob_start();\n"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
+    "// Policies controller",
+    "\t\$args['content'] = ob_get_clean();\n\techo \$hcpp->do_action('hcpp_render_panel', \$args)['content'];\n\n\t// Policies controller"
+);
+$hcpp->patch_file(
+    '/usr/local/hestia/web/inc/main.php',
     "// Body",
     "// Body\n\tob_start();\n"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
     "// Footer",
-    "\t\$args['content'] = ob_get_clean();\n\techo \$hcpp->do_action('hcpp_render_page', \$args)['content'];\n\n\t// Footer"
+    "\t\$args['content'] = ob_get_clean();\n\techo \$hcpp->do_action('hcpp_render_body', \$args)['content'];\n\n\t// Footer"
 );
 $hcpp->patch_file(
     '/usr/local/hestia/web/inc/main.php',
