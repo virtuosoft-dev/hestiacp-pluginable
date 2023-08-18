@@ -758,22 +758,6 @@
         return $args;
     });
 
-    // Throw hcpp_rebooted when the system has been started
-    $hcpp->add_action( 'priv_update_sys_queue', function( $args ) {
-               
-        // Check last reboot time
-        if ( ! isset( $args[0] ) ) return $args; 
-        if ( $args[0] != 'restart' ) return $args;
-        $file = '/usr/local/hestia/data/hcpp/last_reboot.txt';
-        $last = shell_exec("who -b");
-        if ( !file_exists( $file ) || file_get_contents( $file ) !== $last ) {
-            file_put_contents( $file, $last );
-            global $hcpp;
-            $hcpp->do_action( 'hcpp_rebooted' );
-        }
-        return $args;
-    });
-
     // Delete the ports file when the domain is deleted
     $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
         global $hcpp;
@@ -795,10 +779,19 @@
         return $args;
     });
 
+    // Throw hcpp_rebooted when the system has been started
+    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
+        if ( $args[0] == 'hcpp_rebooted' ) {
+            global $hcpp;
+            $hcpp->do_action( 'hcpp_rebooted' );
+        }
+        return $args;
+    });
+        
     // Throw hcpp_new_domain_ready via v-invoke-plugin hook
     $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        global $hcpp;
         if ( $args[0] == 'hcpp_new_domain_ready' ) {
+            global $hcpp;
             array_shift( $args );
             $hcpp->do_action( 'hcpp_new_domain_ready', $args );
         }
