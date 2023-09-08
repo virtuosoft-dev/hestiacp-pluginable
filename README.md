@@ -140,6 +140,20 @@ $results = $hcpp->run( 'username', 'll' );
 ```
 
 &nbsp;
+### Invoking Plugins Directly
+You can invoke your plugins directly by simply including an `index.php` file within your plugin folder. Only index.php is accessible via the URL of the Hestia Control Panel + your plugin's name as a GET load parameter. For instance (given your control panel is at https://local.dev.cc:8083), if you wanted to furnish AJAX responses or serve arbitrary content, your plugin's index.php file would be accessible via:
+
+```
+https://local.dev.cc:8083/pluginable.php?load=myplugin
+```
+
+The above URL would execute and serve the file at:
+
+```
+/usr/local/hestia/plugins/myplugin/index.php
+```
+
+&nbsp;
 ### Hosted Site Prepends and Appends 
 The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file). This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as [WordFence](https://www.wordfence.com/help/firewall/optimizing-the-firewall/), [ISPProtect](https://ispprotect.com/ispprotect-bandaemon/), etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
 

@@ -968,3 +968,21 @@
         return $args;
     } );
 }
+
+// Allow loading a plugin's index.php file if requested, sanitize request
+if ( php_sapi_name() !== 'cli' ) {
+    if ( isset( $_GET['load'] ) ) {
+        $load = $_GET['load'];
+        $load = str_replace(array('/', '\\'), '', $load);
+        if (empty($load) || !preg_match('/^[A-Za-z0-9_-]+$/', $load)) {
+            echo "Invalid plugin specified.";
+        } else {
+            $load = "/usr/local/hestia/plugins/$load/index.php";
+            if ( file_exists( $load ) ) {
+                require_once( $load );
+            }else{
+                echo "Plugin not found.";
+            }
+        }
+    }
+}
