@@ -40,6 +40,7 @@ $event = $hcpp->delLeftMost( $cmd, 'v-' );
 $event = str_replace( '-', '_', $event );
 $event = 'priv_' . $event;
 $params = $hcpp->do_action( $event, $params );
+if ($event == 'priv_check_user_hash') return; // Don't ever filter this one
 
 // Reconstruct API call with our filtered parameters
 $output = [];
