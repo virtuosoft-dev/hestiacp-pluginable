@@ -572,6 +572,7 @@
 
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
+                            $cmd .= ' && sleep ' . mt_rand(1, 60); // Random sleep to avoid git rate limiting
                             $cmd .= ' && git clean -f -d';
                             $cmd .= ' && git fetch --all';
                             $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
