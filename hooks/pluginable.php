@@ -528,7 +528,7 @@
             if ( $hestia != $last_hestia ) {
                 $this->log( 'HestiaCP core updated from ' . $last_hestia . ' to ' . $hestia );
                 $cmd = 'cd /etc/hestiacp/hooks && /etc/hestiacp/hooks/post_install.sh && service hestia restart';
-                $cmd = $this->do_action( 'hccp_update_core_cmd', $cmd );
+                $cmd = $this->do_action( 'hcpp_update_core_cmd', $cmd );
                 shell_exec( $cmd );
             }
             file_put_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt', $hestia );
