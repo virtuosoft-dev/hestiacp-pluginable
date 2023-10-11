@@ -8,11 +8,6 @@ if [ ! -f "$target_script" ]; then
     cat <<EOT >> "$target_script"
 #!/bin/bash
 
-# Wait for the mount point to be available
-while [ ! -d "/media/appFolder" ]; do
-    sleep 1
-done
-
 # Throw a reboot event to trigger the HCPP rebooted hook
 /usr/local/hestia/bin/v-invoke-plugin hcpp_rebooted
 
