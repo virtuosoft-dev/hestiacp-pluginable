@@ -1,4 +1,4 @@
-#!/bin/php
+#!/bin/bash
 
 ## Comment out disable_functions in php.ini 
 ## (undo https://github.com/hestiacp/hestiacp/blob/main/CHANGELOG.md#1810---service-release)
