@@ -6,4 +6,4 @@ sed -i 's/^disable_functions =/;disable_functions =/g' /etc/php/*/fpm/php.ini
 sed -i 's/^disable_functions =/;disable_functions =/g' /etc/php/*/cli/php.ini
 
 ## Execute the patch files script
-php -f ./patch_files.php
+php -f /etc/hestiacp/hooks/patch_files.php
