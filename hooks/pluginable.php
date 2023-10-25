@@ -601,7 +601,7 @@
 
             // Execute the git ls-remote command
             $command = "git ls-remote --tags --sort=\"version:refname\" $url";
-            exec($command, $output);
+            $output = explode( PHP_EOL, shell_exec( $command ) );
 
             // Extract the last column into an array
             $tags = array();
