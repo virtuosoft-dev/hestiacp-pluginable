@@ -298,7 +298,7 @@
         
         /**
          * Register a script to be executed after the plugin folder has been
-         * from /usr/local/hesita/plugins deleted. 
+         * from /usr/local/hestia/plugins deleted. 
          */
         public function register_uninstall_script( $file ) {
 
