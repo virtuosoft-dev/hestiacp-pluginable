@@ -448,8 +448,9 @@
          * @param string $search The search string.
          * @param string $replace The replace string.
          * @param boolean $retry_tabs If true, retry with spaces instead of tabs.
+         * @param boolean $backup If true, backup the file before patching.
          */ 
-        public function patch_file( $file, $search, $replace, $retry_tabs = false ) {
+        public function patch_file( $file, $search, $replace, $retry_tabs = false, $backup = true ) {
             if ( $retry_tabs ) {
                 $search = str_replace( "\t", '    ', $search );
                 $replace = str_replace( "\t", '    ', $replace );
@@ -459,7 +460,7 @@
                 if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
 
                     // Backup file before patch with timestamp of patch yyyy_mm_dd_hh_mm
-                    if ( !file_exists( $file . '.bak' ) ) {
+                    if ( !file_exists( $file . '.bak' ) && $backup ) {
                         copy( $file, $file . '.bak_' . date('Y_m_d_H_i') );
                     }
                     $content = str_replace( $search, $replace, $content );
