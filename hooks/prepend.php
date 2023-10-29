@@ -11,29 +11,21 @@ $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($folder
 foreach( $iterator as $file) {
     if ( $file->getExtension() == "php" ) {
         $fileKey = pathinfo( $file->getFilename(), PATHINFO_FILENAME );
-        if ( strpos( $fileKey, 'prepend' ) === 0 ) {
-            $prependsArray[$fileKey] = $file->getPathname();
+        $filePath = $file->getPathname();
+        if ( strpos( $fileKey, 'prepend' ) === 0 && strpos( $filePath, '.disabled/prepend'  ) === false ) {
+            if ( $fileKey === 'prepend' ) $fileKey = 'prepend_10';
+            if (preg_match('/^prepend_\d$/', $fileKey)) { // lead zero if nec.
+               $fileKey = 'prepend_0' . substr($fileKey, -1);
+            }
+            $prependsArray[$filePath] = $fileKey;
         }
     }
 }
 
-// Sort our prepend arrays by key, default 'prepend' to prepend_10.
-foreach( $prependsArray as $key => $value ) {
-    if ( $key == "prepend" ) {
-        $prependsArray["prepend_10"] = $value;
-        unset( $prependsArray[$key] );
-    }
-}
-
 // Sort numerically by the priority number
-usort( $prependsArray, function( $a, $b ) {
-    $a = explode( '_', $a )[1];
-    $b = explode( '_', $b )[1];
-    return $a - $b;
-});
+asort($prependsArray);
 
 // Load and execute the prepend files in the order they were sorted
 foreach( $prependsArray as $key => $value ) {
     require_once( $value );
 }
-
