@@ -27,5 +27,5 @@ asort($prependsArray);
 
 // Load and execute the prepend files in the order they were sorted
 foreach( $prependsArray as $key => $value ) {
-    require_once( $value );
+    require_once( $key );
 }
