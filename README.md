@@ -40,7 +40,7 @@ Lastly, run the post_install.sh script and restart Hestia:
 service hestia restart
 ```
 
-This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.6.X-v1.7.X in Nginx + Apache2 with Multi-PHP installation options.
+This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.8.X in Nginx + Apache2 with Multi-PHP installation options.
 
 ---
 
