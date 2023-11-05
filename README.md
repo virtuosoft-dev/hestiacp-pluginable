@@ -143,10 +143,10 @@ $results = $hcpp->run( 'username', 'll' );
 
 &nbsp;
 ### Invoking Plugins Directly
-You can invoke your plugins directly by simply including an `index.php` file within your plugin folder. Only index.php is accessible via the URL of the Hestia Control Panel + your plugin's name as a GET load parameter. For instance (given your control panel is at https://local.dev.cc:8083), if you wanted to furnish AJAX responses or serve arbitrary content, your plugin's index.php file would be accessible via:
+You can invoke your plugins directly by simply including an `index.php` file within your plugin folder. Only index.php is accessible via the URL of the Hestia Control Panel + your plugin's name as a GET load parameter. For instance (given your control panel is at https://local.dev.pw:8083), if you wanted to furnish AJAX responses or serve arbitrary content, your plugin's index.php file would be accessible via:
 
 ```
-https://local.dev.cc:8083/pluginable.php?load=myplugin
+https://local.dev.pw:8083/pluginable.php?load=myplugin
 ```
 
 The above URL would execute and serve the file at:
