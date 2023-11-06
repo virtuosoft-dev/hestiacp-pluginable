@@ -15,7 +15,7 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = true;
+        public $logging = false;
         public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
         public $start_port = 50000;
         public $installers = [];
