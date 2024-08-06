@@ -575,9 +575,9 @@
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
                             $cmd .= ' && git clean -f -d';
-                            $cmd .= ' && git fetch --all';
-                            $cmd .= ' && git clone --depth 1 --branch "' . $latest_version . '" ' . $url . ' 2>/dev/null';
+                            $cmd .= ' && git fetch origin tag ' . $latest_version . ' && git checkout tags/' . $latest_version;
                             $this->log( 'Update ' . $subfolder . ' from ' . $installed_version . ' to ' . $latest_version);
+                            $this->log( $cmd );
                             $this->log( shell_exec( $cmd ) );
 
                             // Run the update script if it exists
@@ -609,21 +609,14 @@
             foreach ($output as $line) {
                 $columns = preg_split('/\s+/', $line);
                 $tag = end($columns);
-                $tags[] = $tag;
+                if ( trim( $tag ) != "" ) {
+
+                    // Clean line by obtaining everything to the right of last /
+                    $tag = $this->getRightMost( $tag, "/" );
+                    $tags[] = $tag;
+                }
             }
-
-            // Clean the tags by removing preceding 'refs/tags/' if present
-            $cleanTags = array_map(function ($tag) {
-                $tag = str_replace('refs/tags/', '', $tag);
-                return $tag;
-            }, $tags);
-
-            // Filter out tags that don't conform to the pattern #.#.#
-            $pattern = '/^\d+\.\d+\.\d+$/';
-            $finalTags = preg_grep($pattern, $cleanTags);
-
-            // Get the last element as a string
-            $latestRelease = end($finalTags);
+            $latestRelease = end( $tags );
             $this->log( 'Found latest release tag: ' . $latestRelease );
             return $latestRelease;
         }
