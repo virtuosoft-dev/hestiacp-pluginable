@@ -604,20 +604,24 @@
             $command = "git ls-remote --tags --sort=\"version:refname\" $url";
             $output = explode( PHP_EOL, shell_exec( $command ) );
 
-            // Extract the last column into an array
-            $tags = array();
+            // Extract version numbers
+            $versions = [];
             foreach ($output as $line) {
-                $columns = preg_split('/\s+/', $line);
-                $tag = end($columns);
-                if ( trim( $tag ) != "" ) {
 
-                    // Clean line by obtaining everything to the right of last /
-                    $tag = $this->getRightMost( $tag, "/" );
-                    $tags[] = $tag;
+                // Omit $line if it contains the word beta
+                if (strpos($line, 'beta') !== false) {
+                    continue;
+                }
+                if (preg_match('/refs\/tags\/(v?[0-9]+\.[0-9]+\.[0-9]+)/', $line, $matches)) {
+                    $versions[] = $matches[1];
                 }
             }
-            $latestRelease = end( $tags );
-            $this->log( 'Found latest release tag: ' . $latestRelease );
+
+            // Sort version numbers
+            usort($versions, 'version_compare');
+
+            // Get the most recent version number
+            $latestRelease = end($versions);
             return $latestRelease;
         }
 
