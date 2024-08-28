@@ -784,6 +784,7 @@
             global $hcpp;
             $hcpp->update_core(); // HestiaCP core may have updated before reboot, ensure pluginable is applied
             $hcpp->do_action( 'hcpp_rebooted' );
+            $hcpp->update_plugins(); // Update plugins on reboot
         }
         return $args;
     });
