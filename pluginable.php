@@ -954,6 +954,10 @@
             }
         }
 
+        // Inject HestiaCP-Pluginable version
+        $version = trim( $hcpp->run( 'invoke-plugin hcpp_get_plugin_version "/etc/hestiacp/hooks"' ) );
+        $version = trim( $version );
+        $insert .= '<div class="u-mb10"><small style="float:right;">HestiaCP-Pluginable (' . $version . ')</small></div>';
         $content = $before . $insert . $after;
         $args['content'] = $content;
         return $args;
