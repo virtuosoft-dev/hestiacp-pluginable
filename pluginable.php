@@ -536,9 +536,36 @@
         }
 
         /**
+         * Perform self update of the pluginable (hooks folder) from the git repo.
+         */
+        public function self_update() {
+            sleep(mt_rand(1, 30)); // stagger actual update check
+            $this->log( 'Running self update...' );
+            $url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable';
+            $installed_version = shell_exec( 'cd /etc/hestiacp/hooks && git describe --tags --abbrev=0' );
+            $installed_version = trim( $installed_version );
+            $latest_version = $this->find_latest_repo_tag( $url );
+            $this->log( 'Installed version: ' . $installed_version . ', Latest version: ' . $latest_version );
+            if ( $installed_version != $latest_version && $latest_version != '' ) {
+
+                // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
+                $cmd = 'cd /etc/hestiacp/hooks && git reset --hard';
+                $cmd .= ' && git clean -f -d';
+                $cmd .= ' && git fetch origin tag ' . $latest_version . ' && git checkout tags/' . $latest_version;
+                $this->log( 'Update HestiaCP-Pluginable from ' . $installed_version . ' to ' . $latest_version);
+                $this->log( $cmd );
+                $this->log( shell_exec( $cmd ) );
+
+                // Run the post_install.sh script
+                $cmd = 'cd /etc/hestiacp/hooks && /etc/hestiacp/hooks/post_install.sh';
+                $this->log( shell_exec( $cmd ) );
+            }
+        }
+
+        /**
          * Update plugins from their given git repo.
          */
-        function update_plugins() {
+        public function update_plugins() {
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running update plugins...' );
             $pluginsDir = '/usr/local/hestia/plugins';
@@ -782,6 +809,7 @@
     $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
         if ( $args[0] == 'hcpp_rebooted' ) {
             global $hcpp;
+            $hcpp->self_update(); // Update pluginable on reboot
             $hcpp->update_core(); // HestiaCP core may have updated before reboot, ensure pluginable is applied
             $hcpp->do_action( 'hcpp_rebooted' );
             $hcpp->update_plugins(); // Update plugins on reboot
@@ -935,6 +963,7 @@
     $hcpp->add_action( 'update_sys_queue', function( $args ) {
         if (is_array($args) && count($args) === 1 && $args[0] === 'daily') {
             global $hcpp;
+            $hcpp->self_update();
             $hcpp->update_core();
             $hcpp->update_plugins();
         }
@@ -946,6 +975,7 @@
         $hcpp->add_action( 'priv_update_sys_rrd', function( $args ) { // every 5 minutes
         //$hcpp->add_action( 'priv_update_sys_queue', function( $args ) { // every 2 minutes
             global $hcpp;
+            $hcpp->self_update();
             $hcpp->update_core();
             $hcpp->update_plugins();
             return $args;
