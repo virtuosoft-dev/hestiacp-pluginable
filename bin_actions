@@ -6,7 +6,7 @@
  * 
  * @version 1.0.0
  * @license GPL-3.0
- * @link https://github.com/steveorevo/hestiacp-pluginable
+ * @link https://github.com/virtuosoft-dev/hestiacp-pluginable
  * 
  */
 

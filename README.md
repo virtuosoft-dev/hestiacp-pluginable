@@ -9,28 +9,24 @@ Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like
 ## Installation
 First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `main.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
 
+* /etc/hestiacp/hooks
 * /usr/local/hestia/data/templates/web/php-fpm
 * /usr/local/hestia/web/templates
-* /usr/local/hestia/web/inc/
+* /usr/local/hestia/web/inc
 * /usr/local/hestia/web/api
 * /usr/local/hestia/func
 
-Simply download and unpack the source code files and move the hooks folder to /etc/hestiacp/hooks as root user. First switch to root user:
+***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing pre_install.sh and post_install.sh files if you are using them.***
 
+First, switch to root user:
 ```
 sudo -s
 ```
 
-Then the rest:
+Then simply clone the repo to the /etc/hestiacp/hooks folder:
 
 ```
-cd /tmp
-wget https://github.com/virtuosoft-dev/hestiacp-pluginable/archive/refs/heads/main.zip
-unzip main.zip
-mkdir -p /etc/hestiacp/hooks
-cp -r hestiacp-pluginable-main/hooks /etc/hestiacp
-rm -rf hestiacp-pluginable-main
-rm main.zip
+git clone https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
 ```
 
 Lastly, run the post_install.sh script and restart Hestia: 
