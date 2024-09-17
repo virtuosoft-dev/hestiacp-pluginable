@@ -610,6 +610,7 @@
                             // Run the update script if it exists
                             if ( file_exists( $subfolder . '/update' ) ) {
                                 $cmd = 'cd ' . $subfolder . ' && ./update ' . escapeshellarg( $installed_version ) . ' ' . escapeshellarg( $latest_version  );
+                                $this->log( $cmd );
                                 $this->log( shell_exec( $cmd ) );
                             }
                         }
