@@ -15,7 +15,7 @@
 
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = file_exists( '/usr/local/hestia/data/hcpp/logging' );
+        public $logging = false;
         public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
         public $start_port = 50000;
         public $installers = [];
@@ -314,6 +314,7 @@
          * Our object contructor
          */
         public function __construct() {
+            $this->logging = file_exists( '/usr/local/hestia/data/hcpp/logging' );
             $this->add_action( 'priv_check_user_password', [ $this, 'run_install_scripts' ] );
             $this->add_action( 'priv_check_user_password', [ $this, 'run_uninstall_scripts' ] );
         }
