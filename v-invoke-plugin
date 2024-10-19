@@ -3,6 +3,14 @@
 /**
  * Provide a simple way to invoke our plugins from a call to Hestia's API (bin directory).
  */
+
+// Check for root user
+$user = posix_getpwuid(posix_getuid())['name'];
+if ($user !== 'root') {
+  echo "Only root user can invoke this script.\n";
+  exit(1);
+} 
+
 require_once( '/usr/local/hestia/web/pluginable.php' );
 global $hcpp;
 
