@@ -215,14 +215,20 @@ An optional update script can be included with the plugin. Unlike the install an
 ### Debug Logging
 You can view all the possible hook names that the hestiacp-pluginable API can respond to by turning logging on. Logging logs most operations via $hcpp->log function to /tmp/hcpp.log. To turn on logging, initiate the /tmp/hcpp.log with read/write access across the board; failure to do so may inhibit pluginable functionality as logging is initiated by multiple users and threads:
 
+```
 sudo touch /tmp/hcpp.log
 sudo chmod 666 /tmp/hcpp.log
+```
 
 To turn on logging:
+```
 sudo touch /usr/local/hestia/data/hcpp/logging
+```
 
 To turn off logging, remove the file:
+```
 sudo rm -rf /usr/local/hestia/data/hcpp/logging
+```
 
 Note: the hcpp.log file is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes. Also, HestiaCP UI process does not have PHP access to /var/log/hestia due to open_basedir restrictions. /tmp/hcpp.log is a 'safe' file path; DO NOT delete this file as it can break runtime/logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
 
