@@ -11,7 +11,7 @@ $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($folder
 foreach( $iterator as $file ) {
     if ( $file->getExtension() == "php") {
         $fileKey = pathinfo( $file->getFilename(), PATHINFO_FILENAME );
-        if ( strpos( $fileKey, 'append' ) === 0 ) {
+        if ( strpos( $fileKey, 'append' ) === 0 && strpos( $filePath, '.disabled/append'  ) === false ) {
             $appendsArray[$fileKey] = $file->getPathname();
         }
     }
