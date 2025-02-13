@@ -17,13 +17,14 @@ global $hcpp;
 if ( !class_exists( 'HCPP') ) {
     class HCPP {
 
+        public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = true;
         public $html_content = '';
-        public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
-        public $start_port = 50000;
         public $installers = [];
+        public $logging = true;
+        public $start_port = 50000;
+        public $updates = false;
 
         /**
          * Allow us to extend the HCPP dynamically.
@@ -421,11 +422,11 @@ if ( !class_exists( 'HCPP') ) {
         public function install() {
 
             // Create plugins folder
-            mkdir( '/usr/local/hestia/plugins', 0755, true );
+            @mkdir( '/usr/local/hestia/plugins', 0755, true );
 
             // Create the HCPP directory structure
-            mkdir( '/usr/local/hestia/data/hcpp/installed', 0755, true );
-            mkdir( '/usr/local/hestia/data/hcpp/uninstallers', 0755, true );
+            @mkdir( '/usr/local/hestia/data/hcpp/installed', 0755, true );
+            @mkdir( '/usr/local/hestia/data/hcpp/uninstallers', 0755, true );
 
             // Copy local.conf to /etc/hestiacp/local.conf
             copy( __DIR__ . '/local.conf', '/etc/hestiacp/local.conf' );
@@ -640,9 +641,10 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function remove() {
 
-            // Remove data folder,local.conf, and restore original php.ini
+            // Remove data folder,local.conf, v-invoke-plugin, and restore original php.ini
             shell_exec( 'rm -rf /usr/local/hestia/data/hcpp' );
             shell_exec( 'rm -f /etc/hestiacp/local.conf' );
+            shell_exec( 'rm -f /usr/local/hestia/bin/v-invoke-plugin' );
             $this->restore_backup( '/usr/local/hestia/php/lib/php.ini' );
 
             // Remove jQuery 3.7.1
@@ -811,6 +813,9 @@ if ( !class_exists( 'HCPP') ) {
          * Perform self update of the pluginable (hooks folder) from the git repo.
          */
         public function self_update() {
+            if ( $this->updates == false ) {
+                return;
+            }
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running self update...' );
             $url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable';
@@ -838,6 +843,9 @@ if ( !class_exists( 'HCPP') ) {
          * Update plugins from their given git repo.
          */
         public function update_plugins() {
+            if ( $this->updates == false ) {
+                return;
+            }
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running update plugins...' );
             $pluginsDir = '/usr/local/hestia/plugins';
@@ -1007,15 +1015,6 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         });
     }else{
 
-        // Check for a /usr/local/hestia/bin/v- action via /etc/hestiacp/local.conf
-        if ( isset( $argv[1] ) && strpos( $argv[1], 'v-' ) === 0 ) {
-            $bin_command = str_replace( '-', '_', $argv[1] );
-
-            // Get the remaining arguments after argv[1], if any otherwise set to empty array
-            $args = array_slice( $argv, 2 );
-            $hcpp->do_action( $bin_command, $args );
-        }
-
         // Check for the --install option i.e. ( php -f pluginable.php --install )
         if ( isset( $argv[1] ) && $argv[1] == '--install' ) {
             $hcpp->install();
@@ -1049,6 +1048,46 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 $hcpp->update_plugins();
                 return $args;
             });
+        }
+
+        // Check for a /usr/local/hestia/bin/v- action via /etc/hestiacp/local.conf
+        // and invoke any add_actions
+        if ( isset( $argv[1] ) && strpos( $argv[1], 'v-' ) === 0 ) {
+            $bin_command = str_replace( '-', '_', $argv[1] );
+
+            // Get the remaining arguments after argv[1], if any otherwise set to empty array
+            $args = array_slice( $argv, 2 );
+            $args = $hcpp->do_action( $bin_command, $args );
+            $args = implode( ' ', array_map( 'escapeshellarg', $args ) );
+
+            // Run the original command with the new arguments
+            $cmd = "/usr/local/hestia/bin/$argv[1] $args";
+            $descriptorspec = array(
+                0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+                1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+                2 => array("pipe", "w") // stderr is a file to write to
+            );
+            $process = proc_open( $cmd, $descriptorspec, $pipes, null, null );
+            fclose($pipes[0]);
+
+            // Obtain the original commands output and error stream content
+            $output = stream_get_contents($pipes[1]);
+            $error = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $return_val = proc_close( $process );
+
+            // Invoke any plugin post_ filters
+            $output = $hcpp->do_action( $bin_command . '_output', $output );
+
+            // Return the resulting output, error, and return value to the original caller
+            $hOut = fopen( 'php://stdout', 'w' );
+            $hErr = fopen( 'php://stderr', 'w' );
+            fwrite( $hOut, $output );
+            fwrite( $hErr, $error );
+            fclose( $hOut );
+            fclose( $hErr );
+            exit( $return_val );            
         }
     }
 }else{
