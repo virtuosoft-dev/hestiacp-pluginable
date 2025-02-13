@@ -22,7 +22,7 @@ if ( !class_exists( 'HCPP') ) {
         public $hcpp_filter_count = 0;
         public $html_content = '';
         public $installers = [];
-        public $logging = true;
+        public $logging = false;
         public $start_port = 50000;
 
         /**
