@@ -1,19 +1,19 @@
 # hestiacp-pluginable
 Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API. 
 
+Version 2.X, now with leaner, simplified, and less intrusive API that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less core patches. This makes install/uninstall a lot easier. 
+
 ## Requirements
 
 * Hestia Control Panel
 * Ubuntu or Debian Linux OS
 
 ## Installation
-First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `main.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
+First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `domain.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
 
 * /etc/hestiacp/hooks
 * /usr/local/hestia/data/templates/web/php-fpm
-* /usr/local/hestia/web/templates
-* /usr/local/hestia/web/inc
-* /usr/local/hestia/web/api
+* /usr/local/hestia/php/lib
 * /usr/local/hestia/func
 
 ***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing pre_install.sh and post_install.sh files if you are using them.***
@@ -40,6 +40,33 @@ This will automatically be run anytime HestiaCP updates itself. You may wish to 
 
 ---
 
+## Uninstallation
+Uninstallation of Version 2.X is greatly simplified, removing the risk of perminently altering your HestiaCP install. Follow these steps to restore your stock HestiaCP installation:
+
+1) Restore the original patched files with the .bak extension. i.e. if you see `domain.sh.bak_2023_06_10_21_02`, remove the existing `domain.sh` and rename `domain.sh.bak_2023_06_10_21_02` to `domain.sh`. Be sure to choose the .bak extension file with the most recent date if you see more than one. This will need to be performed for the following folders:
+
+* /usr/local/hestia/data/templates/web/php-fpm
+* /usr/local/hestia/php/lib
+* /usr/local/hestia/func
+
+2) Remove the pluginable files and the local.conf in /usr/local/hestia/func folder via sudo:
+
+```
+sudo rm /usr/local/hestia/func/pluginable*
+sudo rm /etc/hestiacp/local.conf
+```
+
+3) Optionally remove Pluginable's data and plugin files; be cautious here because these commands are destructive and you need to type them correctly!
+
+```
+sudo rm -rf /usr/local/hestia/plugins
+sudo rm -rf /usr/local/hestia/data/hcpp
+sudo rm -rf /etc/hestiacp/hooks
+```
+
+---
+
+&nbsp;
 &nbsp;
 ## Notable Plugins
 A number of plugins that use HestiaCP-Pluginable have been authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate) and can be found under the HCPP prefix on Virtuosoft's GitHub repo (Note: some repos may still be in development):
