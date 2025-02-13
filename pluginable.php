@@ -24,7 +24,6 @@ if ( !class_exists( 'HCPP') ) {
         public $installers = [];
         public $logging = true;
         public $start_port = 50000;
-        public $updates = false;
 
         /**
          * Allow us to extend the HCPP dynamically.
@@ -813,7 +812,8 @@ if ( !class_exists( 'HCPP') ) {
          * Perform self update of the pluginable (hooks folder) from the git repo.
          */
         public function self_update() {
-            if ( $this->updates == false ) {
+            // Only run if autoupdate is enabled
+            if ( strpos( $this->run('v-list-sys-hestia-autoupdate'), 'Enabled') == false ) {
                 return;
             }
             sleep(mt_rand(1, 30)); // stagger actual update check
@@ -843,7 +843,8 @@ if ( !class_exists( 'HCPP') ) {
          * Update plugins from their given git repo.
          */
         public function update_plugins() {
-            if ( $this->updates == false ) {
+            // Only run if autoupdate is enabled
+            if ( strpos( $this->run('v-list-sys-hestia-autoupdate'), 'Enabled') == false ) {
                 return;
             }
             sleep(mt_rand(1, 30)); // stagger actual update check
