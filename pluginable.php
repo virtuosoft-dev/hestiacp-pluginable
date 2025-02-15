@@ -122,7 +122,6 @@ if ( !class_exists( 'HCPP') ) {
             $html = ob_get_clean();
             $dom = new DOMDocument();
             libxml_use_internal_errors( true );
-            $this->log( '$hcpp->append ' . $html );
             $dom->loadHTML( $html );
             libxml_clear_errors();
             $xpath = new DOMXPath($dom);
