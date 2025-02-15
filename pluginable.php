@@ -1231,7 +1231,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 'VERSION' => str_replace( ['version', 'v'], ['',''], $installed ),
                 'ARCH' => $arch,
                 'UPDATED' => $updated,
-                'DESCR' => 'Virtuosoft plugin system for HestiaCP',
+                'DESCR' => 'Hestia control panel plugin system',
                 'TIME' => $hcpp->getRightMost( $installed_timestamp, ' ' ),
                 'DATE' => $hcpp->getLeftMost( $installed_timestamp, ' ' )
             );
