@@ -11,7 +11,7 @@ if ($user !== 'root') {
   exit(1);
 } 
 
-require_once( '/usr/local/hestia/web/pluginable.php' );
+require_once( '/etc/hestiacp/hooks/pluginable.php' );
 global $hcpp;
 
 // Pass along any arguments

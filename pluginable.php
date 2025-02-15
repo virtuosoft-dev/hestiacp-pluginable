@@ -122,6 +122,7 @@ if ( !class_exists( 'HCPP') ) {
             $html = ob_get_clean();
             $dom = new DOMDocument();
             libxml_use_internal_errors( true );
+            $this->log( '$hcpp->append ' . $html );
             $dom->loadHTML( $html );
             libxml_clear_errors();
             $xpath = new DOMXPath($dom);
@@ -390,6 +391,42 @@ if ( !class_exists( 'HCPP') ) {
         }
 
         /**
+         * Insert HTML content into the element with the specified DOMXPath query selector.
+         * 
+         * @param DOMXPath $xpath The DOMXPath object to use for querying the DOM.
+         * @param string $query The query selector to use for selecting the target element.
+         * @param string $html The HTML content to insert into the target element.
+         * 
+         * @return DOMXPath The updated DOMXPath object with the HTML content inserted.
+         */
+        public function insert_html( $xpath, $query, $html ) {
+
+           // Append the pluginable plugins to the plugins section
+           $div_plugins = $xpath->query( $query );
+           if ($div_plugins->length > 0) {
+               $xml = $xpath->document->createDocumentFragment();
+
+               // Use DOMDocument to validate and clean up the HTML string
+               $tempDom = new DOMDocument();
+               libxml_use_internal_errors(true);
+               $tempDom->loadHTML('<div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+               libxml_clear_errors();
+
+               // Import the validated HTML into the fragment
+               foreach ($tempDom->documentElement->childNodes as $child) {
+                   $node = $xpath->document->importNode($child, true);
+                   $xml->appendChild($node);
+               }
+
+               // Append the fragment to the target node
+               $div_plugins->item(0)->appendChild($xml);
+           } else {
+               $this->log('No element found using query selector: ' . $query);
+           }
+           return $xpath;
+        }
+
+        /**
          * Check if a TCP port is free for running a service.
          *
          * @param int $port The port number to check.
@@ -611,14 +648,14 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function register_install_script( $file ) {
             
-            // Check that the installed flag file doesn't already exist
-            $plugin_name = basename( dirname( $file ) );
-            if ( !file_exists( "/usr/local/hestia/data/hcpp/installed/$plugin_name" ) ) {
+            // // Check that the installed flag file doesn't already exist
+            // $plugin_name = basename( dirname( $file ) );
+            // if ( !file_exists( "/usr/local/hestia/data/hcpp/installed/$plugin_name" ) ) {
                  
-                // Remember the plugin_name to run its install script
-                $this->log( "Registering install script for $plugin_name");
-                $this->installers[] = $file;
-            }
+            //     // Remember the plugin_name to run its install script
+            //     $this->log( "Registering install script for $plugin_name");
+            //     $this->installers[] = $file;
+            // }
         }
 
         /**
@@ -627,12 +664,12 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function register_uninstall_script( $file ) {
 
-            // Check if the uninstallers file already exists, if not; copy it over
-            $plugin_name = basename( dirname( $file ) );
-            if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
-                copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
-                shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
-            }
+        //     // Check if the uninstallers file already exists, if not; copy it over
+        //     $plugin_name = basename( dirname( $file ) );
+        //     if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
+        //         copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
+        //         shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
+        //     }
         }
 
         /**
@@ -840,6 +877,43 @@ if ( !class_exists( 'HCPP') ) {
         }
 
         /**
+         * Append a new line to Hestia's shell formatted table
+         * 
+         * @param string $table The existing table as a string
+         * @param string $new_line The new line to append to the table
+         */
+        public function shell_table_append( $table, $new_line ) {
+
+            // Append new data
+            $table = trim( $table );
+            $lines = explode( "\n", $table );
+            $lines[] = $new_line;
+
+            // Parse the lines into a 2D array
+            $data = array_map( function ( $line ) {
+                return preg_split( '/\s+/', $line );
+            }, $lines );
+
+            // Determine the maximum width of each column
+            $maxWidths = array_reduce( $data, function ( $widths, $row ) {
+                foreach ( $row as $i => $cell ) {
+                    $widths[ $i ] = max( $widths[ $i ] ?? 0, strlen( $cell ) );
+                }
+                return $widths;
+            }, [] );
+
+            // Format the table with proper column widths
+            $formattedTable = array_map( function ( $row ) use ( $maxWidths ) {
+                return implode( '  ', array_map( function ( $cell, $i ) use ( $maxWidths ) {
+                    return str_pad( $cell, $maxWidths[ $i ] );
+                }, $row, array_keys( $row ) ) );
+            }, $data );
+
+            // Convert the formatted table back to a string
+            return implode( "\n", $formattedTable );
+        }
+
+        /**
          * Update plugins from their given git repo.
          */
         public function update_plugins() {
@@ -1014,6 +1088,86 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             $xpath->query('/html/head')->item(0)->appendChild($scriptElement);        
             return $xpath;
         });
+
+        // List pluginable plugins in the HestiaCP UI's edit server page
+        $hcpp->add_action('edit_server_xpath', function($xpath) use ($hcpp) {
+
+            // Insert css style for version tag
+            $style = '<style>
+                        .pversion {
+                            font-size: smaller;
+                            float: right;
+                            font-weight: lighter;
+                            margin: 5px;
+                    }
+                      </style>';
+            $xpath = $hcpp->insert_html( $xpath, '/html/head', $style );
+
+            // Process any POST request submissions
+            foreach( $_REQUEST as $k => $v ) {
+                if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
+                    $plugin = substr( $k, 5 );
+                    $hcpp->run( 'v-invoke-plugin hcpp_config ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
+                }
+            }
+
+            // Gather list of plugins and install state
+            $plugins = glob( '/usr/local/hestia/plugins/*' );
+            $html = '';
+            foreach( $plugins as $p ) {
+                
+                // Extract name form plugin.php header or default to folder name
+                if ( !file_exists( $p . '/plugin.php' ) ) {
+                    continue;
+                }
+                $label = file_get_contents( $p . '/plugin.php' );
+                $name = basename( $p, '.disabled' );
+                if ( strpos( $label, 'Plugin Name: ') !== false ) {
+                    $label = $hcpp->delLeftMost( $label, 'Plugin Name: ' );
+                    $label = trim( $hcpp->getLeftMost( $label, "\n") );
+                }else{
+                    $label = $name;
+                }
+
+                // Extract version if git repo
+                $version = '';
+                if ( is_dir( $p . '/.git' ) ) {
+                    $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
+                    $version = trim( $version );
+                    if ( $version != '' ) {
+                        $version = '<span class="pversion">' . $version . '</span>';
+                    }
+                }
+
+                // Inject the pluginable plugin into the page
+                $h = '<div class="u-mb10">
+                            <label for="hcpp_%name%" class="form-label">
+                                %label%
+                            </label>
+                            %version%
+                            <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
+                                <option value="no">' . _('No') . '</option>
+                                <option value="yes">' . _('Yes') . '</option>
+                            </select>
+                        </div>';
+                $h = str_replace( '%name%', $name, $h );
+                $h = str_replace( '%label%', $label, $h );
+                $h = str_replace( '%version%', $version, $h );
+                if ( strpos( $p, '.disabled' ) === false ) {
+                    $h = str_replace( 'value="yes"', 'value="yes" selected=true', $h );
+                }else{
+                    $h = str_replace( 'value="no"', 'value="no" selected=true', $h );
+                }
+                $h .= "\n";
+                $html .= $h;
+            }
+
+            // Append the pluginable plugins to the plugins section
+            $query = '//select[@id="v_plugin_app_installer"]/ancestor::div[contains(@class, "box-collapse-content")]';
+            $xpath = $hcpp->insert_html( $xpath, $query, $html );
+            return $xpath;
+        });
+
     }else{
 
         // Check for the --install option i.e. ( php -f pluginable.php --install )
@@ -1050,6 +1204,86 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 return $args;
             });
         }
+
+        // Append to v-list-sys-hestia-updates our pluginable update/version info
+        $hcpp->add_action( 'v_list_sys_hestia_updates_output', function( $output ) use( $hcpp ) {
+
+            // Get current version and timestamp
+            $installed = shell_exec( 'cd /etc/hestiacp/hooks && git describe --all' );
+            $installed = $hcpp->delLeftMost( $installed, '/' );
+            $installed = trim( $hcpp->getLeftMost( $installed, "/n" ) );
+
+            // Get the timestamp of the cloned repo, and format it
+            $installed_timestamp = shell_exec( 'cd /etc/hestiacp/hooks && git log -1 --format=%cd' );
+            $installed_timestamp = date( 'Y-m-d H:i:s', strtotime( $installed_timestamp ) );
+
+            // Get latest online tag version
+            $repo_url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable.git';
+            $latest = $hcpp->find_latest_repo_tag( $repo_url );
+
+            // Determine if the pluginable system is up to date
+            $updated = $installed == $latest ? 'yes' : 'no';
+
+            // Get CPU architecture
+            $arch = php_uname('m') == 'x86_64' ? 'amd64' : (php_uname('m') == 'aarch64' ? 'arm64' : 'unknown');
+
+            // Gather pluginable system info
+            $info = array(
+                'VERSION' => str_replace( ['version', 'v'], ['',''], $installed ),
+                'ARCH' => $arch,
+                'UPDATED' => $updated,
+                'DESCR' => 'Virtuosoft plugin system for HestiaCP',
+                'TIME' => $hcpp->getRightMost( $installed_timestamp, ' ' ),
+                'DATE' => $hcpp->getLeftMost( $installed_timestamp, ' ' )
+            );
+
+            // Check if first character is '{' to determine if JSON output
+            if ( substr( $output, 0, 1 ) == '{' ) {
+                $output = json_decode( $output, true );
+                $output['hestiacp-pluginable'] = $info;
+                $output = json_encode( $output, JSON_PRETTY_PRINT );
+            }else{
+                $new_line = "hestiacp-pluginable {$info['VERSION']} {$info['ARCH']} {$info['UPDATED']} {$info['DATE']}";
+                $output = $hcpp->shell_table_append( $output, $new_line );
+            }
+            $output .= "\n";
+            return $output;
+        });
+
+        // Process plugin invoke requests
+        $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) use( $hcpp ) {
+
+            // Return the version of the given plugin
+            if ( $args[0] == 'get_plugin_version' ) {
+                $plugin = $args[1];
+                if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
+                    $version = shell_exec( "cd /usr/local/hestia/plugins/$plugin && git describe --all" );
+                }elseif ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
+                    $version = shell_exec( "cd /usr/local/hestia/plugins/$plugin.disabled && git describe --all" );
+                }else{
+                    $version = "\n";
+                }
+                $version = $hcpp->delLeftMost( $version, '/' );
+                echo $version;
+            }
+
+            // Enable/Disable a plugin
+            if ( $args[0] == 'hcpp_config' ) {
+                $plugin = $args[2];
+                if ( $args[1] == 'yes' ) {
+                    if ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
+                        rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                        $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
+                    }
+                }else{
+                    if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
+                        rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
+                        $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
+                    }
+                }
+            }
+            return $args;
+        });
 
         // Check for a /usr/local/hestia/bin/v- action via /etc/hestiacp/local.conf
         // and invoke any add_actions
