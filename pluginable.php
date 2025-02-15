@@ -647,14 +647,14 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function register_install_script( $file ) {
             
-            // // Check that the installed flag file doesn't already exist
-            // $plugin_name = basename( dirname( $file ) );
-            // if ( !file_exists( "/usr/local/hestia/data/hcpp/installed/$plugin_name" ) ) {
+            // Check that the installed flag file doesn't already exist
+            $plugin_name = basename( dirname( $file ) );
+            if ( !file_exists( "/usr/local/hestia/data/hcpp/installed/$plugin_name" ) ) {
                  
-            //     // Remember the plugin_name to run its install script
-            //     $this->log( "Registering install script for $plugin_name");
-            //     $this->installers[] = $file;
-            // }
+                // Remember the plugin_name to run its install script
+                $this->log( "Registering install script for $plugin_name");
+                $this->installers[] = $file;
+            }
         }
 
         /**
@@ -663,12 +663,12 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function register_uninstall_script( $file ) {
 
-        //     // Check if the uninstallers file already exists, if not; copy it over
-        //     $plugin_name = basename( dirname( $file ) );
-        //     if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
-        //         copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
-        //         shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
-        //     }
+            // Check if the uninstallers file already exists, if not; copy it over
+            $plugin_name = basename( dirname( $file ) );
+            if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
+                copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
+                shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
+            }
         }
 
         /**
