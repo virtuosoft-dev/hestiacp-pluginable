@@ -1292,10 +1292,10 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             // Get the remaining arguments after argv[1], if any otherwise set to empty array
             $args = array_slice( $argv, 2 );
 
-            // Remove last argument if its an empty string represented by double single quotes
-            if ( end( $args ) === "''" ) {
-                array_pop( $args );
-            }
+            // Remove double slash encoding and double single quotes from arguments
+            $args = array_map(function($arg) {
+                return str_replace(["''",'\\'], ['',''], $arg);
+            }, $args);
             $args = $hcpp->do_action( $bin_command, $args );
 
             // Escape the remaining arguments
@@ -1303,6 +1303,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
             // Run the original command with the new arguments
             $cmd = "/usr/local/hestia/bin/$argv[1] $args";
+            
             $descriptorspec = array(
                 0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
                 1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
