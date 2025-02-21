@@ -5,7 +5,7 @@ Version 2.X, now with leaner, simplified, and less intrusive API that uses Hesti
 
 ## Requirements
 
-* Hestia Control Panel
+* Hestia Control Panel version 1.9.2 or greater
 * Ubuntu or Debian Linux OS
 
 ## Installation
@@ -16,7 +16,7 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 * /usr/local/hestia/php/lib
 * /usr/local/hestia/func
 
-***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing pre_install.sh and post_install.sh files if you are using them.***
+***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing post_install.sh files if you are using them.***
 
 First, switch to root user:
 ```
@@ -36,12 +36,20 @@ Lastly, run the post_install.sh script and restart Hestia:
 service hestia restart
 ```
 
-This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.8.X in Nginx + Apache2 with Multi-PHP installation options.
+This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
 
 ---
 
 ## Uninstallation
 Uninstallation of Version 2.X is greatly simplified, removing the risk of perminently altering your HestiaCP install. Follow these steps to restore your stock HestiaCP installation:
+
+### Automatic Uninstall
+Run the following from the command line:
+```
+sudo php -f /etc/hestiacp/hooks/pluginable.php -- --uninstall
+```
+
+### Manual Uninstall
 
 1) Restore the original patched files with the .bak extension. i.e. if you see `domain.sh.bak_2023_06_10_21_02`, remove the existing `domain.sh` and rename `domain.sh.bak_2023_06_10_21_02` to `domain.sh`. Be sure to choose the .bak extension file with the most recent date if you see more than one. This will need to be performed for the following folders:
 
@@ -49,21 +57,26 @@ Uninstallation of Version 2.X is greatly simplified, removing the risk of permin
 * /usr/local/hestia/php/lib
 * /usr/local/hestia/func
 
-2) Remove the pluginable files and the local.conf in /usr/local/hestia/func folder via sudo:
+2) Remove the pluginable files and the local.conf via sudo:
 
 ```
-sudo rm /usr/local/hestia/func/pluginable*
+sudo rm /usr/local/hestia/bin/v-invoke-plugin
 sudo rm /etc/hestiacp/local.conf
+sudo rm /etc/hestiacp/hooks/*
 ```
 
-3) Optionally remove Pluginable's data and plugin files; be cautious here because these commands are destructive and you need to type them correctly!
+3) Optionally remove Pluginable's data and plugin files:
 
 ```
 sudo rm -rf /usr/local/hestia/plugins
 sudo rm -rf /usr/local/hestia/data/hcpp
-sudo rm -rf /etc/hestiacp/hooks
 ```
 
+&nbsp;
+&nbsp;
+---
+---
+# NOTE: Documentation below this line applies to pluginable version 1.X. A list of pluginable 2.X compatible plugins and documentation on how to create a 2.X compatible plugin is pending. 
 ---
 
 &nbsp;
