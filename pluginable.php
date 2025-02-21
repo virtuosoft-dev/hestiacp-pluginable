@@ -1291,12 +1291,12 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
             // Get the remaining arguments after argv[1], if any otherwise set to empty array
             $args = array_slice( $argv, 2 );
-            $args = $hcpp->do_action( $bin_command, $args );
 
-            // Check if the last argument is an empty string and remove it if necessary
-            if (end($args) === '') {
-                array_pop($args);
+            // Remove last argument if its an empty string represented by double single quotes
+            if ( end( $args ) === "''" ) {
+                array_pop( $args );
             }
+            $args = $hcpp->do_action( $bin_command, $args );
 
             // Escape the remaining arguments
             $args = implode( ' ', array_map( 'escapeshellarg', $args ) );
