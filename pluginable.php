@@ -117,7 +117,8 @@ if ( !class_exists( 'HCPP') ) {
          * Define our append method to filter the output of the control panel.
          */
         public function append() {
-
+            $this->do_action( 'hcpp_append' );
+            
             // Get the DOMXPath object
             $html = ob_get_clean();
             $dom = new DOMDocument();
@@ -638,6 +639,7 @@ if ( !class_exists( 'HCPP') ) {
          * Define our prepend method to capture the output of the control panel.
          */
         public function prepend() {
+            $this->do_action( 'hcpp_prepend' );
             ob_start();
         }
 
