@@ -586,7 +586,7 @@ if ( !class_exists( 'HCPP') ) {
             $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
             $msg = json_encode( $msg, JSON_PRETTY_PRINT );
             $msg = $t . ' ' . $msg;
-            $msg = substr( $msg, 0, 256 );
+            $msg = substr( $msg, 0, 4096 );
             $msg .= "\n";
 
             // Use PHP's native error logging function
