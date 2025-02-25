@@ -643,6 +643,22 @@ if ( !class_exists( 'HCPP') ) {
             ob_start();
         }
 
+        /**
+         * Generate random alpha numeric for passwords, seeds, etc.
+         *
+         * @param int $length The length of characters to return.
+         * @param string $chars The set of possible characters to choose from.
+         * @return string The resulting randomly generated string.
+         */
+        public function random_chars( $length = 10, $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890' ) {
+            $string = '';
+            $max_index = strlen( $chars ) - 1;
+            for ( $i = 0; $i < $length; $i++ ) {
+                $string .= $chars[random_int( 0, $max_index )]; // random_int is more crypto secure
+            }
+            return $string;
+        }
+
         /** 
          * Register a script to be exectued once when the plugin is first present
          * in /usr/local/hestia/plugins.
