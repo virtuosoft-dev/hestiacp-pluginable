@@ -134,10 +134,12 @@ if ( !class_exists( 'HCPP') ) {
             $path = str_replace( ['/index.php', '/'], ['', '_'], $path );
 
             // Run the path specific actions
-            $xpath = $this->do_action( $path . '_xpath', $xpath );
-            $dom = $xpath->document;
-            $html = $dom->saveHTML();
-            $html = $this->do_action( $path . '_html', $html );
+            if ( $path != 'index.php' ) {
+                $xpath = $this->do_action( $path . '_xpath', $xpath );
+                $dom = $xpath->document;
+                $html = $dom->saveHTML();
+                $html = $this->do_action( $path . '_html', $html );
+            }
 
             // Run all pages actions after specifics
             $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
