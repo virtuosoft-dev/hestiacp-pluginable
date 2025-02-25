@@ -641,6 +641,7 @@ if ( !class_exists( 'HCPP') ) {
         public function prepend() {
             $this->do_action( 'hcpp_prepend' );
             ob_start();
+            $this->do_action( 'hcpp_ob_started' );
         }
 
         /**
