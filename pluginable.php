@@ -133,17 +133,18 @@ if ( !class_exists( 'HCPP') ) {
             $path = trim( $parsed_url['path'], '/' );
             $path = str_replace( '/', '_', $path );
 
-            // Run all pages actions
-            $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
-            $dom = $xpath->document;
-            $html = $dom->saveHTML();
-            $html = $this->do_action( 'hcpp_all_html', $html );
-
             // Run the path specific actions
             $xpath = $this->do_action( $path . '_xpath', $xpath );
             $dom = $xpath->document;
             $html = $dom->saveHTML();
             $html = $this->do_action( $path . '_html', $html );
+
+            // Run all pages actions after specifics
+            $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
+            $dom = $xpath->document;
+            $html = $dom->saveHTML();
+            $html = $this->do_action( 'hcpp_all_html', $html );
+
             echo $html;            
         }
 
