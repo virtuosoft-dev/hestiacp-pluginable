@@ -24,6 +24,7 @@ if ( !class_exists( 'HCPP') ) {
         public $installers = [];
         public $logging = false;
         public $start_port = 50000;
+        public $custom_pages = [];
 
         /**
          * Allow us to extend the HCPP dynamically.
@@ -58,6 +59,16 @@ if ( !class_exists( 'HCPP') ) {
             $this->hcpp_filters[$tag][$idx] = $function_to_add;
             ksort($this->hcpp_filters[$tag]);
             return true;
+        }
+
+/**
+         * Add a custom page to the HestiaCP UI that maintains the header, menu, and footer.
+         * 
+         * @param string $p The 'p' GET parameter to match to display the custom page.
+         * @param string $file The file to include when the 'p' GET parameter matches.
+         */
+        public function add_custom_page( $p, $file ) {
+            $this->custom_pages[$p] = $file;
         }
 
         /**
@@ -1112,6 +1123,20 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             $scriptElement->setAttribute('src', '/js/dist/jquery-3.7.1.min.js');
             $xpath->query('/html/head')->item(0)->appendChild($scriptElement);        
             return $xpath;
+        });
+
+        /**
+         * Route to any added custom pages
+         */
+        $hcpp->add_action( 'hcpp_ob_started', function() use ($hcpp){
+            if ( isset( $_GET['p'] ) && isset( $hcpp->custom_pages[ $_GET['p'] ] ) ) {
+                session_start();
+                ob_start();
+                require_once( $_GET['p'] );
+                global $hcpp;
+                $hcpp->append();
+                exit();
+            }
         });
 
         // List pluginable plugins in the HestiaCP UI's edit server page
