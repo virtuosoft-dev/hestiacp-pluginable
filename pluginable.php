@@ -1124,32 +1124,27 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 return;
             }
             $page = filter_input(INPUT_GET, 'p', FILTER_SANITIZE_STRING);
-            if ( ! isset( $hcpp->custom_pages[ $page ] ) ) {
-                return;
-            }
+            if ( isset( $hcpp->custom_pages[ $page ] ) && file_exists( $hcpp->custom_pages[ $page ] ) ) {
+                
+                // Main include
+                $TAB = strtoupper( $page );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/main.php" );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/header.php" );
+                $panel = top_panel(empty($_SESSION["look"]) ? $_SESSION["user"] : $_SESSION["look"], $TAB);
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/policies.php" );
 
-
-            // Main include
-            $TAB = "";
-            require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/main.php" );
-            require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/header.php" );
-            $panel = top_panel(empty($_SESSION["look"]) ? $_SESSION["user"] : $_SESSION["look"], $TAB);
-            require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/policies.php" );
-
-            // Include custom page
-            $page_file = $hcpp->custom_pages[ $page ];
-            if ( file_exists( $page_file ) ) {
-                require_once( $page_file );
+                // Include custom page
+                require_once( $hcpp->custom_pages[ $page ] );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/footer.php" );
+                $hcpp->append();
             }else{
 
                 // Abandon buffer and redirect to 404 page
                 ob_end_clean();
                 header("Location: /error/404.html");
-                exit();
             }
-            require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/footer.php" );
-            $hcpp->append();
             exit();
+
         });
         $hcpp->prepend();
 
