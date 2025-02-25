@@ -131,7 +131,7 @@ if ( !class_exists( 'HCPP') ) {
             $request_url = $_SERVER['REQUEST_URI'];
             $parsed_url = parse_url( $request_url );
             $path = trim( $parsed_url['path'], '/' );
-            $path = str_replace( '/', '_', $path );
+            $path = str_replace( ['/index.php', '/'], ['', '_'], $path );
 
             // Run the path specific actions
             $xpath = $this->do_action( $path . '_xpath', $xpath );
