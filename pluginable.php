@@ -128,10 +128,14 @@ if ( !class_exists( 'HCPP') ) {
             $xpath = new DOMXPath($dom);
 
             // Get the path
-            $request_url = $_SERVER['REQUEST_URI'];
-            $parsed_url = parse_url( $request_url );
-            $path = trim( $parsed_url['path'], '/' );
-            $path = str_replace( ['/index.php', '/'], ['', '_'], $path );
+            if ( isset( $_GET['p'] ) ) {
+                $path = $_GET['p'];
+            }else{
+                $request_url = $_SERVER['REQUEST_URI'];
+                $parsed_url = parse_url( $request_url );
+                $path = trim( $parsed_url['path'], '/' );
+            }
+            $path = str_replace( ['/index.php', '/', '-'], ['', '_', '_'], $path );
 
             // Run the path specific actions
             if ( $path != 'index.php' ) {
