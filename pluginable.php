@@ -871,7 +871,7 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function runuser( $user, $cmd ) {
             $cmd = $this->do_action( 'hcpp_runuser', $cmd );
-            $cmd = "runuser -s /bin/bash -l $user -c " . escapeshellarg( 'cd /home/$user && ' . $cmd );
+            $cmd = "runuser -s /bin/bash -l {$user} -c " . escapeshellarg( 'cd /home/' . $user . ' && ' . $cmd );
             global $hcpp;
             $hcpp->log( $cmd );
             $cmd = $this->do_action( 'hcpp_runuser_exec', $cmd );
