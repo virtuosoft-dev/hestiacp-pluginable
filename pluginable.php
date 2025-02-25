@@ -1132,7 +1132,18 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             if ( isset( $_GET['p'] ) && isset( $hcpp->custom_pages[ $_GET['p'] ] ) ) {
                 session_start();
                 ob_start();
+
+                // Main include
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/main.php" );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/header.php" );
+
+                // Panel
+                $panel = top_panel(empty($_SESSION["look"]) ? $_SESSION["user"] : $_SESSION["look"], '');
+
+                // Policies controller
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/policies.php" );
                 require_once( $_GET['p'] );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/footer.php" );
                 global $hcpp;
                 $hcpp->append();
                 exit();
