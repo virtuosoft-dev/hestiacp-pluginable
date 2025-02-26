@@ -61,7 +61,7 @@ if ( !class_exists( 'HCPP') ) {
             return true;
         }
 
-/**
+        /**
          * Add a custom page to the HestiaCP UI that maintains the header, menu, and footer.
          * 
          * @param string $p The 'p' GET parameter to match to display the custom page.
