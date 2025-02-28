@@ -82,9 +82,11 @@ sudo rm -rf /usr/local/hestia/data/hcpp
 &nbsp;
 &nbsp;
 ## Notable Plugins
-A number of plugins that use HestiaCP-Pluginable have been authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate) and can be found under the HCPP prefix on Virtuosoft's GitHub repo (Note: some repos may still be in development):
+A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X API and authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate). They can be found under the HCPP prefix on Virtuosoft's GitHub repo:
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
+
+
 * [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
 * [HCPP-Collabora](https://github.com/virtuosoft-dev/hcpp-collabora)
 
@@ -123,7 +125,7 @@ A plugin can hook and respond to actions that HestiaCP invokes whenever an API c
  * Description: A sample plugin.
  */
 global $hcpp;
-$hcpp->add_action( 'list_users', function( $args ) {
+$hcpp->add_action( 'v_list_users', function( $args ) {
 
     global $hcpp;
     $hcpp->logging = true;
@@ -137,7 +139,7 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomi
 
 The above sample plugin will write the arguments to `/tmp/hcpp.log` (if logging is on, see 'Debug Logging' below). 
 
-Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function and that hyphens/dashes must be replaced with underscores. 
+Note that the hook is the same name as the HestiaCP command line API but with underscores in place of hyphens.
 
 &nbsp;
 ### Registering Install and Uninstall Scripts
