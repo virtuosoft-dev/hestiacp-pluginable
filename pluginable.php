@@ -1240,6 +1240,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         // Check for the --install option i.e. ( php -f pluginable.php --install )
         if ( isset( $argv[1] ) && $argv[1] == '--install' ) {
             $hcpp->install();
+            $hcpp->do_action( 'hcpp_post_install' );
         }
 
         // Check for the --remove option i.e. ( php -f pluginable.php --remove )
