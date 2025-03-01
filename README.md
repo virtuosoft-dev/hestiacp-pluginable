@@ -131,7 +131,7 @@ It is important that an $hcpp->add_action hook returns (passes along) the incomi
 
 The above sample plugin will write the arguments to `/tmp/hcpp.log` (if logging is on, see 'Debug Logging' below). 
 
-Note that the hook is the same name as the HestiaCP command line API but with underscores in place of hyphens.
+Note that the hook is the same name as the HestiaCP command line API *but with underscores in place of hyphens*.
 
 &nbsp;
 ### Registering Install and Uninstall Scripts
@@ -175,8 +175,8 @@ $results = $hcpp->run( 'username', 'ls -laF' );
 ### Noteworthy Action Hooks
 You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_started` actions as these are fired with every UI screen of the HestiaCP web interface. You can scan the source code of pluginable.php and look for source that invokes the `do_action` method. Additional actions, their parameters, and their descriptions are listed below:
 
-* `hcpp_prepend` -
-* `hcpp_append` -
+* `hcpp_prepend` - Occurs at the very beginning when a HestiaCP UI's web page is requested, or a CLI command is invoked.
+* `hcpp_append` - Occurs 
 * `hcpp_ob_started` -
 * `hcpp_plugin_installed` - $plugin_name
 * `hcpp_plugin_uninstalled` - $plugin_name
@@ -204,6 +204,9 @@ For example: If the CLI command to list details of a user account by name were i
 * `v_list_user_output` - $output would contain the output of the HestiaCP's v-list-user CLI command. It is important to return the $output variable for callers to receive the results from invoking the original HestiaCP CLI command.
 
 The example above illustrates how a HestiaCP Pluginable plugin can use action hooks to receive and alter arguments destined for HestiaCP's native CLI API as well as receive and alter the resultes of those commands before these are returned to the caller.
+
+### Adding a Custom Page to Hestia's UI
+
 
 &nbsp;
 ### Hosted Site Prepends and Appends 
@@ -264,6 +267,7 @@ Plugins can leverage obtaining automatic updates from publicly hosted git repos 
 The plugin folder must have been initially installed using git and therefore should have a .git folder present for automatic update checking to work. When the HCPP object's `public $logging = true` option is set (see next section ***Debug Logging***); update checking will occur at a higher frequency of every 5 minutes (vs once daily) to assist with testing.
 
 An optional update script can be included with the plugin. Unlike the install and uninstall scripts; the update script does not need to be registered. Updates do not trigger the install script; but you may wish to invoke it on update's behalf. The update script will be passed two parameters; the current installed version (i.e. `v1.0.0`) and the newly installed version (i.e. `v2.0.0`). The optional update script is executed if present and only after after the repo has been updated. The update script feature allows plugin authors to make critical changes and apply patches if necessary to accomodate specific upgrade version migrations.
+
 
 &nbsp;
 ### Debug Logging
