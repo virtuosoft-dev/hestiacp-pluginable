@@ -409,6 +409,27 @@ if ( !class_exists( 'HCPP') ) {
         }
 
         /**
+         * Get the repo's version tag for the given repo's folder.
+         * 
+         * @param string $folder The folder to get the repo's version tag for.
+         * @return string The repo's version tag.
+         */
+        public function get_repo_folder_tag( $folder ) {
+            $cmd = "cd $folder && git describe --tags --abbrev=0 2>&1"; // Redirect stderr to stdout
+            $tag = trim( shell_exec( $cmd ) );
+            if ( strpos( $tag, 'fatal' ) !== false ) {
+                $cmd = "cd $folder && git describe --all 2>&1"; // Redirect stderr to stdout
+                $tag = trim( shell_exec( $cmd ) );
+                $tag = explode( '/', $tag );
+                $tag = end( $tag );
+            }
+            if ( strpos( $tag, 'fatal' ) !== false ) {
+                $tag = '';
+            }
+            return $tag;
+        }
+
+        /**
          * Insert HTML content into the element with the specified DOMXPath query selector.
          * 
          * @param DOMXPath $xpath The DOMXPath object to use for querying the DOM.
@@ -895,8 +916,7 @@ if ( !class_exists( 'HCPP') ) {
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running self update...' );
             $url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable';
-            $installed_version = shell_exec( 'cd /etc/hestiacp/hooks && git describe --tags --abbrev=0' );
-            $installed_version = trim( $installed_version );
+            $installed_version = $this->get_repo_folder_tag( '/etc/hestiacp/hooks' );
             $latest_version = $this->find_latest_repo_tag( $url );
             $this->log( 'Installed version: ' . $installed_version . ', Latest version: ' . $latest_version );
             if ( $installed_version != $latest_version && $latest_version != '' ) {
@@ -988,10 +1008,9 @@ if ( !class_exists( 'HCPP') ) {
                     if ( $url != '' ) {
 
                         // Get the installed version number of the plugin
-                        $installed_version = shell_exec( 'cd ' . $subfolder . ' && git describe --tags --abbrev=0' );
-                        $installed_version = trim( $installed_version );
+                        $installed_version = $this->get_repo_folder_tag( $subfolder );
                         $latest_version = $this->find_latest_repo_tag( $url );
-                        if ( $installed_version != $latest_version && $latest_version != '' ) {
+                        if ( $installed_version != $latest_version && $latest_version != '' && strlen( $installed_version ) < 18 ) {
 
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
@@ -1279,45 +1298,90 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         // Append to v-list-sys-hestia-updates our pluginable update/version info
         $hcpp->add_action( 'v_list_sys_hestia_updates_output', function( $output ) use( $hcpp ) {
 
-            // Get current version and timestamp
-            $installed = shell_exec( 'cd /etc/hestiacp/hooks && git describe --all' );
-            $installed = $hcpp->delLeftMost( $installed, '/' );
-            $installed = trim( $hcpp->getLeftMost( $installed, "/n" ) );
-
-            // Get the timestamp of the cloned repo, and format it
-            $installed_timestamp = shell_exec( 'cd /etc/hestiacp/hooks && git log -1 --format=%cd' );
-            $installed_timestamp = date( 'Y-m-d H:i:s', strtotime( $installed_timestamp ) );
-
-            // Get latest online tag version
-            $repo_url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable.git';
-            $latest = $hcpp->find_latest_repo_tag( $repo_url );
-
-            // Determine if the pluginable system is up to date
-            $updated = $installed == $latest ? 'yes' : 'no';
-
-            // Get CPU architecture
+            // Get CPU architecture (of HestiaCP system; all plugins should be cross platform)
             $arch = php_uname('m') == 'x86_64' ? 'amd64' : (php_uname('m') == 'aarch64' ? 'arm64' : 'unknown');
 
-            // Gather pluginable system info
-            $info = array(
-                'VERSION' => str_replace( ['version', 'v'], ['',''], $installed ),
-                'ARCH' => $arch,
-                'UPDATED' => $updated,
-                'DESCR' => 'Hestia control panel plugin system',
-                'TIME' => $hcpp->getRightMost( $installed_timestamp, ' ' ),
-                'DATE' => $hcpp->getLeftMost( $installed_timestamp, ' ' )
-            );
+            // List of folders and their git repo urls to list in the update output
+            $git_folder_url = [
+                ['/etc/hestiacp/hooks', 'https://github.com/virtuosoft-dev/hestiacp-pluginable.git'] // HestiaCP Pluginable core
+            ];
 
-            // Check if first character is '{' to determine if JSON output
-            if ( substr( $output, 0, 1 ) == '{' ) {
-                $output = json_decode( $output, true );
-                $output['hestiacp-pluginable'] = $info;
-                $output = json_encode( $output, JSON_PRETTY_PRINT );
-            }else{
-                $new_line = "hestiacp-pluginable {$info['VERSION']} {$info['ARCH']} {$info['UPDATED']} {$info['DATE']}";
-                $output = $hcpp->shell_table_append( $output, $new_line );
+            // Add any plugins from /usr/local/hestia/plugins to list
+            $plugins = glob( '/usr/local/hestia/plugins/*' );
+            foreach( $plugins as $p ) {
+                if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
+                    continue;
+                }
+                if ( file_exists( $p . '/plugin.php' ) ) {
+                    $plugin_php = file_get_contents( $p . '/plugin.php' );
+                    if ( strpos( $plugin_php, 'Plugin URI: ') !== false ) {
+                        $url = $hcpp->delLeftMost( $plugin_php, 'Plugin URI: ' );
+                        $url = trim( $hcpp->getLeftMost( $url, "\n") );
+                        $url = basename( $url, '.git' ) . '.git';
+                        $git_folder_url[] = [ $p, $url ];
+                    }
+                }
             }
-            $output .= "\n";
+
+            // Loop through each git's folder and url to obtain update/version info
+            foreach( $git_folder_url as $folder_url ) {
+                $folder = $folder_url[0];
+                $url = $folder_url[1];
+
+                // Get current version and timestamp
+                $installed = $hcpp->get_repo_folder_tag( $folder );
+                $installed = $hcpp->delLeftMost( $installed, '/' );
+                $installed = trim( $hcpp->getLeftMost( $installed, "/n" ) );
+
+                // Get the timestamp of the cloned repo, and format it
+                $installed_timestamp = shell_exec( 'cd ' . $folder . ' && git log -1 --format=%cd' );
+                $installed_timestamp = date( 'Y-m-d H:i:s', strtotime( $installed_timestamp ) );
+
+                // Get latest online tag version
+                $latest = $hcpp->find_latest_repo_tag( $url );
+
+                // Determine if the pluginable system is up to date
+                $updated = $installed == $latest ? 'yes' : 'no';
+
+                // Gather pluginable system info
+                $package_name = '';
+                $package_desc = '';
+                if ( file_exists( $folder . '/plugin.php') ) {
+                    $plugin_php = file_get_contents( $folder . '/plugin.php' );
+                    if ( strpos( $plugin_php, 'Description: ') !== false ) {
+                        $package_desc = $hcpp->delLeftMost( $plugin_php, 'Description: ' );
+                        $package_desc = trim( $hcpp->getLeftMost( $package_desc, "\n") );
+                    }
+                    if ( strpos( $plugin_php, 'Plugin URI: ') !== false ) {
+                        $package_name = $hcpp->delLeftMost( $plugin_php, 'Plugin URI: ' );
+                        $package_name = trim( $hcpp->getLeftMost( $package_name, "\n") );
+                        $package_name = basename( $package_name, '.git' );
+                    }
+                }else{
+                    $package_name = 'hestiacp-pluginable';
+                    $package_desc = 'Hestia control panel plugin system';
+                }
+
+                $info = array(
+                    'VERSION' => str_replace( ['version', 'v'], ['',''], $installed ),
+                    'ARCH' => $arch,
+                    'UPDATED' => $updated,
+                    'DESCR' => $package_desc,
+                    'TIME' => $hcpp->getRightMost( $installed_timestamp, ' ' ),
+                    'DATE' => $hcpp->getLeftMost( $installed_timestamp, ' ' )
+                );
+
+                // Check if first character is '{' to determine if JSON output
+                if ( substr( $output, 0, 1 ) == '{' ) {
+                    $output = json_decode( $output, true );
+                    $output[$package_name] = $info;
+                    $output = json_encode( $output, JSON_PRETTY_PRINT );
+                }else{
+                    $new_line = "{$package_name} {$info['VERSION']} {$info['ARCH']} {$info['UPDATED']} {$info['DATE']}";
+                    $output = $hcpp->shell_table_append( $output, $new_line );
+                }
+                $output .= "\n";
+            }
             return $output;
         });
 
