@@ -1317,7 +1317,9 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                     if ( strpos( $plugin_php, 'Plugin URI: ') !== false ) {
                         $url = $hcpp->delLeftMost( $plugin_php, 'Plugin URI: ' );
                         $url = trim( $hcpp->getLeftMost( $url, "\n") );
-                        $url = basename( $url, '.git' ) . '.git';
+                        if ( str_ends_with( $url, '.git' ) === false ) {
+                            $url .= '.git';
+                        }
                         $git_folder_url[] = [ $p, $url ];
                     }
                 }
