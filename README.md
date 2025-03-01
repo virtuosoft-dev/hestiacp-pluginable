@@ -107,7 +107,7 @@ and contain the file plugin.php at:
 /usr/local/hestia/plugins/example/plugin.php
 ```
 
-A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
+A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call [v-list-users](https://hestiacp.com/docs/reference/cli.html#v-list-user) is invoked, either by the REST API or website control panel would look like:
 
 ```
 <?php
