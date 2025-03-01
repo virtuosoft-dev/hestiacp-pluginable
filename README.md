@@ -175,30 +175,30 @@ $results = $hcpp->run( 'username', 'ls -laF' );
 ### Noteworthy Action Hooks
 You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_started` actions as these are fired with every UI screen of the HestiaCP web interface. You can scan the source code of pluginable.php and look for source that invokes the `do_action` method. Additional actions, their parameters, and their descriptions are listed below:
 
-* `hcpp_prepend` - Occurs at the very beginning when a HestiaCP UI's web page is requested, or a CLI command is invoked.
-* `hcpp_append` - Occurs 
-* `hcpp_ob_started` -
-* `hcpp_plugin_installed` - $plugin_name
-* `hcpp_plugin_uninstalled` - $plugin_name
-* `hcpp_runuser` - [$user, $cmd] 
-* `hcpp_runuser_exec` - $cmd
-* `hcpp_runuser_result` - $result
-* `hcpp_post_install` - 
-* `hcpp_rebooted` - 
-* `hcpp_plugin_enabled` - $plugin
-* `hcpp_plugin_disabled` - $plugin
+* `hcpp_prepend` - Occurs at start, when a HestiaCP UI's web page is requested.
+* `hcpp_append` - Occurs at end, when a HestiaCP UI's web page is about to be sent.
+* `hcpp_ob_started` - Occurs at after initial output buffer is started, when a HestiaCP UI's web page is requested.
+* `hcpp_plugin_installed` - $plugin_name, Occurs when a plugin is installed.
+* `hcpp_plugin_uninstalled` - $plugin_name, Occurs when a plugin is uninstalled.
+* `hcpp_runuser` - [$user, $cmd], Occurs when $hcpp->runuser method is invoked.
+* `hcpp_runuser_exec` - $cmd, Occurs when $hcpp->runuser method is invoked and the command is about to be executed.
+* `hcpp_runuser_result` - $result, Occurs after $hcpp->runuser executes a command and the results are returned. 
+* `hcpp_post_install` - Occurs when the HestiaCP system has been updated and a new version has finished installing. 
+* `hcpp_rebooted` - Occurs after the operating system has been rebooted.
+* `hcpp_plugin_enabled` - $plugin, Occurs when the given plugin has been enabled.
+* `hcpp_plugin_disabled` - $plugin, Occurs when the given plugin has been disabled.
 
-All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. These...
+All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. For instance, when the user requests the URL from a HestiaCP instance at https://cp.example.com/list/web. Notice that the slashes after the domain has been changed to underscores and the `_xpath` and `_html` extension has been added to the action name. Therefore plugin developers can alter the output of the HestiaCP's listing of websites on the web tab by implementing hooks for one or more of the following actions:
 
-* `list_web_xpath` - $xpath
-* `list_web_html` - $html
-* `hcpp_all_xpath` - $xpath
-* `hcpp_all_html` - $html
+* `list_web_xpath` - $xpath, Invoked when a HestiaCP web page is about to be sent; the $xpath contains a PHP DOMXPath object that can be used to modify the output.  
+* `list_web_html` - $html, Invoked when a HestiaCP web page is about to be sent; the $html contains the raw HTML source code that can be modified before it is sent.  
+* `hcpp_all_xpath` - $xpath, Occurs for every HestiaCP web page that is requested; the $xpath contains a PHP DOMXPath object that can be used to modify the output.
+* `hcpp_all_html` - $html, Occurs for every HestiaCP web page that is requested; the $html contains the raw HTML source code that can be modified before it is sent.
 
 
 All [HestiaCP CLI commands](https://hestiacp.com/docs/reference/cli.html) can be hooked by their given name. In most cases you can alter the parameters passed to the command before the command is actually executed. This powerful method allows plugins do alter or enhance the behavior of HestiaCP. 
 
-For example: If the CLI command to list details of a user account by name were invoked via the example CLI: `v-list-user admin`; the following active hook could be hooked. 
+For example: If the CLI command to list details of a user account by name were invoked via the example CLI: `v-list-user admin`; the following action hooks will be called:
 
 * `v_list_user` - $args would contain the paramters passed to the command as an array; i.e. $args[0] would contain `admin` given the example above. It is important to return the $args array (with optional modifications) to be executed by HestiaCP's original CLI command.
 * `v_list_user_output` - $output would contain the output of the HestiaCP's v-list-user CLI command. It is important to return the $output variable for callers to receive the results from invoking the original HestiaCP CLI command.
@@ -206,11 +206,18 @@ For example: If the CLI command to list details of a user account by name were i
 The example above illustrates how a HestiaCP Pluginable plugin can use action hooks to receive and alter arguments destined for HestiaCP's native CLI API as well as receive and alter the resultes of those commands before these are returned to the caller.
 
 ### Adding a Custom Page to Hestia's UI
+Pluginable features an easy way to add a custom page to HestiaCP web UI, for example:
 
+```
+global $hcpp;
+$hcpp->add_custom_page( 'nodeapp', __DIR__ . '/pages/nodeapp.php' );
+```
+
+This would add a custom page to display the contents of the nodeapp.php when the user visits the URL https://cp.example.com/?p=nodeapp. The standard HestiaCP header, menu tabs, and footer, stylesheets, etc. will automatically be prepended and appended to the output. The plugin developer only needs to worry about including the optional toolbar and container div tags. See the NodeApp's implementation of logs at: https://github.com/virtuosoft-dev/hcpp-nodeapp/blob/main/pages/nodeapplog.php
 
 &nbsp;
 ### Hosted Site Prepends and Appends 
-The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file). This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as [WordFence](https://www.wordfence.com/help/firewall/optimizing-the-firewall/), [ISPProtect](https://ispprotect.com/ispprotect-bandaemon/), etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
+The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file) ***on the hosted sites***. This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as [WordFence](https://www.wordfence.com/help/firewall/optimizing-the-firewall/), [ISPProtect](https://ispprotect.com/ispprotect-bandaemon/), etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
 
 A plugin author can execute custom PHP for hosted sites by simply including a file named 'prepend.php' for execution before any hosted site scripts; and/or include a file named 'append.php' to execute code after any hosted site scripts. 
 
