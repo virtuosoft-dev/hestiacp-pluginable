@@ -1,7 +1,7 @@
 # hestiacp-pluginable
 Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API. 
 
-Version 2.X, now with leaner, simplified, and less intrusive API that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less core patches. This makes install/uninstall a lot easier. 
+Version 2.x, now with leaner API that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less modifications to core files. This makes install/uninstall a lot easier and less intrusive. You will also find that version 2.x displays plugins and updates in the existing HestiaCP UI (see 'Updates' and 'Configure' in HestiaCP). Both the pluginable project and plugins that use it can receive updates directly from their respective git repositories.
 
 ## Requirements
 
@@ -18,22 +18,15 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 
 ***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing post_install.sh files if you are using them.***
 
-First, switch to root user:
+Clone the latest release version (see v2.0.0 below) to the hooks folder:
 ```
-sudo -s
-```
-
-Then simply clone the repo to the /etc/hestiacp/hooks folder:
-
-```
-git clone https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
+sudo git clone --branch v2.0.0 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
 ```
 
-Lastly, run the post_install.sh script and restart Hestia: 
+Run the post_install.sh script:
 
 ```
 /etc/hestiacp/hooks/post_install.sh
-service hestia restart
 ```
 
 This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
@@ -74,19 +67,18 @@ sudo rm -rf /usr/local/hestia/data/hcpp
 
 &nbsp;
 &nbsp;
----
----
-# NOTE: Documentation below this line applies to pluginable version 1.X. A list of pluginable 2.X compatible plugins and documentation on how to create a 2.X compatible plugin is pending. 
+
 ---
 
 &nbsp;
 &nbsp;
+
 ## Notable Plugins
 A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X API and authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate). They can be found under the HCPP prefix on Virtuosoft's GitHub repo:
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
 
-
+<!--
 * [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
 * [HCPP-Collabora](https://github.com/virtuosoft-dev/hcpp-collabora)
 
@@ -99,7 +91,7 @@ A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X AP
 * [HCPP-VSCode](https://github.com/virtuosoft-dev/hcpp-vscode)
 * [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
 * [HCPP-Go](https://github.com/virtuosoft-dev/hcpp-go)
-
+-->
 
 ---
 
@@ -169,29 +161,26 @@ You can run any of HestiaCP's API commands using the HCPP object's `run` method.
 
 ```
 global $hcpp;
-$all_users = $hcpp->run('list-users json');
+$all_users = $hcpp->run('v-list-users json');
 ```
 
 You also have access to the `runuser` method that can be used to run any arbituary command as a given Linux user; the following would list the contents of the user's home folder:
 
 ```
 global $hcpp;
-$results = $hcpp->run( 'username', 'll' );
+$results = $hcpp->run( 'username', 'ls -laF' );
 ```
 
 &nbsp;
-### Invoking Plugins Directly
-You can invoke your plugins directly by simply including an `index.php` file within your plugin folder. Only index.php is accessible via the URL of the Hestia Control Panel + your plugin's name as a GET load parameter. For instance (given your control panel is at https://local.dev.pw:8083), if you wanted to furnish AJAX responses or serve arbitrary content, your plugin's index.php file would be accessible via:
+### Noteworthy Action Hooks
+You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_started` actions as these are fired with every UI screen of the HestiaCP web interface. You can scan the source code of pluginable.php and look for source that invokes the `do_action` method. Additional actions, their parameters, and their descriptions are listed below:
 
-```
-https://local.dev.pw:8083/pluginable.php?load=myplugin
-```
-
-The above URL would execute and serve the file at:
-
-```
-/usr/local/hestia/plugins/myplugin/index.php
-```
+* `hcpp_prepend`
+* `hcpp_ob_started`
+* `hcpp_plugin_installed` - $plugin_name
+* `hcpp_plugin_uninstalled` - $plugin_name
+* `hcpp_runuser` - $cmd
+* 
 
 &nbsp;
 ### Hosted Site Prepends and Appends 

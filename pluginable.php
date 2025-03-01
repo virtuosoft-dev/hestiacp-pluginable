@@ -870,7 +870,10 @@ if ( !class_exists( 'HCPP') ) {
          * @return string The output of the command.
          */
         public function runuser( $user, $cmd ) {
-            $cmd = $this->do_action( 'hcpp_runuser', $cmd );
+            $args = [ $user, $cmd ];
+            $args = $this->do_action( 'hcpp_runuser', $args );
+            $cmd = $args[1];
+            $user = $args[0];
             $cmd = "runuser -s /bin/bash -l {$user} -c " . escapeshellarg( 'cd /home/' . $user . ' && ' . $cmd );
             global $hcpp;
             $hcpp->log( $cmd );
