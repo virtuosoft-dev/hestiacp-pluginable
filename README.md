@@ -107,7 +107,7 @@ and contain the file plugin.php at:
 /usr/local/hestia/plugins/example/plugin.php
 ```
 
-A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
+A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call [v-list-users](https://hestiacp.com/docs/reference/cli.html#v-list-user) is invoked, either by the REST API or website control panel would look like:
 
 ```
 <?php
@@ -196,7 +196,7 @@ All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based ac
 * `hcpp_all_html` - $html
 
 
-All HestiaCP CLI commands can be hooked by their given name. In most cases you can alter the parameters passed to the command before the command is actually executed. This powerful method allows plugins do alter or enhance the behavior of HestiaCP. 
+All [HestiaCP CLI commands](https://hestiacp.com/docs/reference/cli.html) can be hooked by their given name. In most cases you can alter the parameters passed to the command before the command is actually executed. This powerful method allows plugins do alter or enhance the behavior of HestiaCP. 
 
 For example: If the CLI command to list details of a user account by name were invoked via the example CLI: `v-list-user admin`; the following active hook could be hooked. 
 
