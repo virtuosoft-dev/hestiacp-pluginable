@@ -175,12 +175,35 @@ $results = $hcpp->run( 'username', 'ls -laF' );
 ### Noteworthy Action Hooks
 You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_started` actions as these are fired with every UI screen of the HestiaCP web interface. You can scan the source code of pluginable.php and look for source that invokes the `do_action` method. Additional actions, their parameters, and their descriptions are listed below:
 
-* `hcpp_prepend`
-* `hcpp_ob_started`
+* `hcpp_prepend` -
+* `hcpp_append` -
+* `hcpp_ob_started` -
 * `hcpp_plugin_installed` - $plugin_name
 * `hcpp_plugin_uninstalled` - $plugin_name
-* `hcpp_runuser` - $cmd
-* 
+* `hcpp_runuser` - [$user, $cmd] 
+* `hcpp_runuser_exec` - $cmd
+* `hcpp_runuser_result` - $result
+* `hcpp_post_install` - 
+* `hcpp_rebooted` - 
+* `hcpp_plugin_enabled` - $plugin
+* `hcpp_plugin_disabled` - $plugin
+
+All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. These...
+
+* `list_web_xpath` - $xpath
+* `list_web_html` - $html
+* `hcpp_all_xpath` - $xpath
+* `hcpp_all_html` - $html
+
+
+All HestiaCP CLI commands can be hooked by their given name. In most cases you can alter the parameters passed to the command before the command is actually executed. This powerful method allows plugins do alter or enhance the behavior of HestiaCP. 
+
+For example: If the CLI command to list details of a user account by name were invoked via the example CLI: `v-list-user admin`; the following active hook could be hooked. 
+
+* `v_list_user` - $args would contain the paramters passed to the command as an array; i.e. $args[0] would contain `admin` given the example above. It is important to return the $args array (with optional modifications) to be executed by HestiaCP's original CLI command.
+* `v_list_user_output` - $output would contain the output of the HestiaCP's v-list-user CLI command. It is important to return the $output variable for callers to receive the results from invoking the original HestiaCP CLI command.
+
+The example above illustrates how a HestiaCP Pluginable plugin can use action hooks to receive and alter arguments destined for HestiaCP's native CLI API as well as receive and alter the resultes of those commands before these are returned to the caller.
 
 &nbsp;
 ### Hosted Site Prepends and Appends 
