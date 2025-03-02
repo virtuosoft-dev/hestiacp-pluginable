@@ -1,7 +1,9 @@
 # hestiacp-pluginable
 Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API. 
 
-Version 2.x, now with leaner API that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less modifications to core files. This makes install/uninstall a lot easier and less intrusive. You will also find that version 2.x displays plugins and updates in the existing HestiaCP UI (see 'Updates' and 'Configure' in HestiaCP). Both the pluginable project and plugins that use it can receive updates directly from their respective git repositories.
+![Updates screen](./screenshot.png)
+
+Version 2.x, now with a leaner design that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less modifications to core files. This makes install/uninstall a lot easier, less intrusive, and more forward compatible with HestiaCP updates. You will also find that version 2.x displays plugins and updates in the existing HestiaCP UI. See (#1 above) 'Updates' and 'Configure' in HestiaCP. Pluginable allows plugins (such as the [NodeApp plugin](https://github.com/virtuosoft-dev/hcpp-nodeapp) #2 above) to customize and react to virtually all aspects of the HestiaCP web UI and [CLI API](https://hestiacp.com/docs/reference/cli.html). Both the pluginable project and plugins that use it can receive updates directly from their respective git repositories.
 
 ## Requirements
 
@@ -18,7 +20,7 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 
 ***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing post_install.sh files if you are using them.***
 
-Clone the latest release version (see v2.0.0 below) to the hooks folder:
+Clone the latest release version (i.e. replace **v2.0.0** below with the latest release version) to the hooks folder:
 ```
 sudo git clone --branch v2.0.0 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
 ```
