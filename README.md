@@ -7,7 +7,7 @@ Version 2.x, now with a leaner design that uses HestiaCP 'sanctioned' /etc/hesti
 
 ## Requirements
 
-* Hestia Control Panel version 1.9.2 or greater
+* Hestia Control Panel version 1.9.X or greater
 * Ubuntu or Debian Linux OS
 
 ## Installation
@@ -28,7 +28,7 @@ sudo git clone --branch v2.0.0 https://github.com/virtuosoft-dev/hestiacp-plugin
 Run the post_install.sh script:
 
 ```
-/etc/hestiacp/hooks/post_install.sh
+sudo /etc/hestiacp/hooks/post_install.sh
 ```
 
 This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
