@@ -508,7 +508,7 @@ if ( !class_exists( 'HCPP') ) {
 
             // Append to /etc/hestiacp/local.conf
             $local_conf = '';
-            if ( !file_exists( '/etc/hestiacp/local.conf' ) ) {
+            if ( file_exists( '/etc/hestiacp/local.conf' ) ) {
                 $local_conf = file_get_contents( '/etc/hestiacp/local.conf' );
             }
             $local_conf .= "\nsource /etc/hestiacp/hooks/local.conf\n";
