@@ -503,8 +503,16 @@ if ( !class_exists( 'HCPP') ) {
             @mkdir( '/usr/local/hestia/data/hcpp/installed', 0755, true );
             @mkdir( '/usr/local/hestia/data/hcpp/uninstallers', 0755, true );
 
-            // Copy local.conf to /etc/hestiacp/local.conf
-            copy( __DIR__ . '/local.conf', '/etc/hestiacp/local.conf' );
+            // // Copy local.conf to /etc/hestiacp/local.conf
+            // copy( __DIR__ . '/local.conf', '/etc/hestiacp/local.conf' );
+
+            // Append to /etc/hestiacp/local.conf
+            $local_conf = '';
+            if ( !file_exists( '/etc/hestiacp/local.conf' ) ) {
+                $local_conf = file_get_contents( '/etc/hestiacp/local.conf' );
+            }
+            $local_conf .= "\nsource /etc/hestiacp/hooks/local.conf\n";
+            file_put_contents( '/etc/hestiacp/local.conf', $local_conf );
 
             // Copy the prepend/append/pluginable system to /usr/local/hestia/data/hcpp
             copy( '/etc/hestiacp/hooks/prepend.php', '/usr/local/hestia/data/hcpp/prepend.php' );
