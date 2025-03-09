@@ -1191,7 +1191,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         });
 
         // List pluginable plugins in the HestiaCP UI's edit server page
-        $hcpp->add_action('edit_server_xpath', function($xpath) use ($hcpp) {
+        $hcpp->add_action('hcpp_edit_server_xpath', function($xpath) use ($hcpp) {
 
             // Insert css style for version tag
             $style = '<style>
@@ -1249,6 +1249,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                             <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
                                 <option value="no">' . _('No') . '</option>
                                 <option value="yes">' . _('Yes') . '</option>
+                                <option value="uninstall">' . _('Uninstall') . '</option>
                             </select>
                         </div>';
                 $h = str_replace( '%name%', $name, $h );
@@ -1418,17 +1419,31 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
             // Enable/Disable a plugin
             if ( $args[0] == 'hcpp_config' ) {
+                $v = $args[1];
                 $plugin = $args[2];
-                if ( $args[1] == 'yes' ) {
-                    if ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
-                        rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
-                        $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
-                    }
-                }else{
-                    if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
-                        rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
-                        $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
-                    }
+                switch( $v ) {
+                    case 'yes':
+                        if ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
+                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                            $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
+                        }
+                        break;
+                    case 'no':
+                        if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
+                            rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
+                            $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
+                        }
+                        break;
+                    case 'uninstall':
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                        }
+                        $hcpp->do_action( 'hcpp_plugin_uninstall', $plugin );
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
+                            $hcpp->run_uninstall_scripts();
+                        }
+                        break;
                 }
             }
             return $args;
