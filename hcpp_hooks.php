@@ -23,9 +23,8 @@ class HCPP_Hooks {
             if ( $method->name != '__construct' ){
 
                 // Check if name begins with a valid plugin prefix
-                global $hcpp_plugin_prefixes;
                 global $hcpp;
-                foreach ( $hcpp_plugin_prefixes as $p ){
+                foreach ( $hcpp->prefixes as $p ){
                     if ( strpos( $method->name, $p ) === 0 ){
 
                         // Assume for action/filter hook definition
@@ -37,13 +36,7 @@ class HCPP_Hooks {
                         }else{
                             $priority = 10;
                         }
-
-                        // Use a closure to wrap the method call and pass $hcpp
-                        $callback = function() use ($method, $hcpp) {
-                            $args = func_get_args();
-                            return call_user_func_array(array($this, $method->name), array_merge([$hcpp], $args));
-                        };
-                        $hcpp->add_action( $name, $callback->bindTo($this, $this), $priority );
+                        $hcpp->add_action( $name, array( $this, $method->name ), $priority );
                     }
                 }
             }

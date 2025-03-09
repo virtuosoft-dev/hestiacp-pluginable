@@ -18,6 +18,7 @@ if ( !class_exists( 'HCPP') ) {
     class HCPP {
 
         public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
+        public $prefixes = ['hcpp_', 'v_'];
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
         public $html_content = '';
@@ -150,10 +151,10 @@ if ( !class_exists( 'HCPP') ) {
 
             // Run the path specific actions
             if ( $path != 'index.php' ) {
-                $xpath = $this->do_action( $path . '_xpath', $xpath );
+                $xpath = $this->do_action( 'hcpp_' . $path . '_xpath', $xpath );
                 $dom = $xpath->document;
                 $html = $dom->saveHTML();
-                $html = $this->do_action( $path . '_html', $html );
+                $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
             }
 
             // Run all pages actions after specifics
@@ -1128,16 +1129,19 @@ if ( !class_exists( 'HCPP') ) {
 // Create the hcpp object if it doesn't already exist
 if ( !isset( $hcpp ) || $hcpp === null ) {
     $hcpp = new HCPP();
+    require_once( __DIR__ . '/hcpp_hooks.php' );
 
     // Load any plugins
     $plugins = glob( '/usr/local/hestia/plugins/*' );
     foreach($plugins as $p) {
         if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
             continue;
-        }
+        }        
         $plugin_file = $p . '/plugin.php';
         if ( $plugin_file != "/usr/local/hestia/plugins/index.php/plugin.php" ) {
             if ( file_exists( $plugin_file ) ) {
+                $prefix = strtolower( $hcpp->getRightMost( $p, '/' ) );
+                $hcpp->prefixes[] = $prefix . '_';
                 require_once( $plugin_file );
             }
         }

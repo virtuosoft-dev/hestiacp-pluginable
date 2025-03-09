@@ -190,10 +190,10 @@ You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_
 * `hcpp_plugin_enabled` - $plugin, Occurs when the given plugin has been enabled.
 * `hcpp_plugin_disabled` - $plugin, Occurs when the given plugin has been disabled.
 
-All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. For instance, when the user requests the URL from a HestiaCP instance at https://cp.example.com/list/web. Notice that the slashes after the domain has been changed to underscores and the `_xpath` and `_html` extension has been added to the action name. Therefore plugin developers can alter the output of the HestiaCP's listing of websites on the web tab by implementing hooks for one or more of the following actions:
+All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. For instance, when the user requests the URL from a HestiaCP instance at https://cp.example.com/list/web. Notice that the slashes after the domain has been changed to underscores and the `_xpath` and `_html` extension has been added to the action name along with the `hcpp_` prefix. Therefore plugin developers can alter the output of the HestiaCP's listing of websites on the web tab by implementing hooks for one or more of the following actions:
 
-* `list_web_xpath` - $xpath, Invoked when a HestiaCP web page is about to be sent; the $xpath contains a PHP DOMXPath object that can be used to modify the output.  
-* `list_web_html` - $html, Invoked when a HestiaCP web page is about to be sent; the $html contains the raw HTML source code that can be modified before it is sent.  
+* `hcpp_list_web_xpath` - $xpath, Invoked when a HestiaCP web page is about to be sent; the $xpath contains a PHP DOMXPath object that can be used to modify the output.  
+* `hcpp_list_web_html` - $html, Invoked when a HestiaCP web page is about to be sent; the $html contains the raw HTML source code that can be modified before it is sent.  
 * `hcpp_all_xpath` - $xpath, Occurs for every HestiaCP web page that is requested; the $xpath contains a PHP DOMXPath object that can be used to modify the output.
 * `hcpp_all_html` - $html, Occurs for every HestiaCP web page that is requested; the $html contains the raw HTML source code that can be modified before it is sent.
 
