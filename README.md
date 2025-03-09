@@ -129,11 +129,44 @@ $hcpp->add_action( 'v_list_users', function( $args ) {
 });
 ```
 
-It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
+The `Plugin URI` is used by Pluginable to check for newer releases from the respective GitHub repository. The `Description` should be short and breif; it will be used to describe the plugin on the updates page (see screenshot at the top of this document). It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
 
 The above sample plugin will write the arguments to `/tmp/hcpp.log` (if logging is on, see 'Debug Logging' below). 
 
-Note that the hook is the same name as the HestiaCP command line API *but with underscores in place of hyphens*.
+Note that the hook is the same name as the HestiaCP command line API *but with underscores in place of hyphens*. 
+
+### Extending HCPP_Hooks Class
+Using the HCPP_Hooks class can greatly simplify plugin authoring. You may wish to group all of your plugin's action hooks, methods, and properties into a class and register it with Pluginable to organize your plugin's behaviors. A complex plugin that uses the traditional API can be found in the [HCPP-NodeApp plugin](https://github.com/virtuosoft-dev/hcpp-nodeapp). But a much simpler example using the HCPP_Hooks class can be found in the [HCPP-VitePress plugin](https://github.com/virtuosoft-dev/hcpp-vitepress). We can further illustrate using the HCPP_Hooks class to extend or alter HestiaCP with the example below:
+
+1) First; create the `plugin.php` file with a proper header and `require_once` the file containing your plugin's class. 
+```
+<?php
+/**
+ * Plugin Name: MyPlugin
+ * Plugin URI: https://github/virtuosoft/hcpp-myplugin
+ * Description: An example plugin using HCPP_Hooks
+ */
+
+require_once( dirname(__FILE__) . '/myplugin.php' );
+```
+
+2. Second; author your plugin's class to extend the HCPP_Hooks class. A detailed explanation of the code follows:
+```
+<?php
+<?php
+class MyPlugin extends HCPP_Hooks {
+    public function v_list_sys_info_output( $args ) {
+        $args = str_replace( 'Debian', 'Commodore64', $args );
+        return $args;
+    }
+}
+global $hcpp;
+$hcpp->register_plugin( MyPlugin::class );
+```
+
+By using `extends HCPP_Hooks` you can immediately write public functions that respond to HestiaCP's action hooks. Simply name your functions with the appropiate prefix, i.e `hcpp_` for pluginable generated action hooks (see Noteworthy Action Hooks below) or `v_` for [HestiaCP's native CLI API](https://hestiacp.com/docs/reference/cli.html) commands. The example above will replace the string 'Debian' with 'Commodore64' in the CLI command v-list-sys-info output by hooking the `v_list_sys_info_output` action (note the `_output` suffix allows us to filter the output). For example, when the user types this command on the terminal or visits HestiaCP's Server Settings page (that uses the command) they will see 'Commodore64' listed as the operating system:
+
+![Updates screen](./example.png)
 
 &nbsp;
 ### Registering Install and Uninstall Scripts

@@ -12,8 +12,13 @@
 
 if ( class_exists( 'HCPP_Hooks' ) ) return;
 class HCPP_Hooks {
+    public $script_file = '';
+    public $class_name = '';
+
     public function __construct() {
         $self = new \ReflectionClass( $this );
+        $this->class_name = $self->name;
+        $this->script_file = $self->getFileName();
         $public_methods = $self->getMethods( \ReflectionMethod::IS_PUBLIC );
 
         if ( empty ( $public_methods ) ) {

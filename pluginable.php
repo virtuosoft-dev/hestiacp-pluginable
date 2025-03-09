@@ -26,6 +26,7 @@ if ( !class_exists( 'HCPP') ) {
         public $logging = false;
         public $start_port = 50000;
         public $custom_pages = [];
+        public $plugins = [];
 
         /**
          * Allow us to extend the HCPP dynamically.
@@ -725,6 +726,17 @@ if ( !class_exists( 'HCPP') ) {
         }
 
         /**
+         * Register a plugin with the HestiaCP Pluginable object and create an instance of it.
+         * 
+         * @param object $plugin The plugin class to register and create.
+         */
+        public function register_plugin( $class ) {
+            $property = strtolower( (new \ReflectionClass( $class ))->getShortName() );
+            $this->$property = new $class();
+            $this->plugins[] = $this->$property;
+        }
+
+        /**
          * Register a script to be executed after the plugin folder has been
          * from /usr/local/hestia/plugins deleted. 
          */
@@ -865,6 +877,10 @@ if ( !class_exists( 'HCPP') ) {
                 $this->log( shell_exec( $cmd ) );
                 $this->do_action( 'hcpp_plugin_installed', $plugin_name );
             }
+
+            // foreach( $this->plugins as $plugin ) {
+            //     if ( file_)
+            // }            
             return  $args;
         }
 
