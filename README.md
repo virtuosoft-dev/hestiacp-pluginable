@@ -80,6 +80,10 @@ A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X AP
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
 
+*Important Note: The following plugins are dependent on [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp), ensure you install [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp) first!*
+
+* [HCPP-VitePress](https://github.com/virtuosoft-dev/hcpp-vitepress)
+
 <!--
 * [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
 * [HCPP-Collabora](https://github.com/virtuosoft-dev/hcpp-collabora)
@@ -167,6 +171,8 @@ $hcpp->register_plugin( MyPlugin::class );
 By using `extends HCPP_Hooks` you can immediately write public functions that respond to HestiaCP's action hooks. Simply name your functions with the appropiate prefix, i.e `hcpp_` for pluginable generated action hooks (see Noteworthy Action Hooks below) or `v_` for [HestiaCP's native CLI API](https://hestiacp.com/docs/reference/cli.html) commands. The example above will replace the string 'Debian' with 'Commodore64' in the CLI command v-list-sys-info output by hooking the `v_list_sys_info_output` action (note the `_output` suffix allows us to filter the output). For example, when the user types this command on the terminal or visits HestiaCP's Server Settings page (that uses the command) they will see 'Commodore64' listed as the operating system:
 
 ![Updates screen](./example.png)
+
+By creating your class and registering it via `$hcpp->register_plugin` your plugin instance is created and can be referenced by other plugins by name within the HCPP object. For example, the `$hcpp->myplugin` property will now hold a reference to your plugin and can be accessed by other plugin authors. This is how the VitePress plugin can utilize the NodeApp plugin (via `$hcpp->nodeapp`) to implement VitePress features.
 
 &nbsp;
 ### Registering Install and Uninstall Scripts
