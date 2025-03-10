@@ -134,11 +134,17 @@ if ( !class_exists( 'HCPP') ) {
             
             // Get the DOMXPath object
             $html = ob_get_clean();
-            $dom = new DOMDocument();
-            libxml_use_internal_errors( true );
-            $dom->loadHTML( $html );
-            libxml_clear_errors();
-            $xpath = new DOMXPath($dom);
+            try {
+                $dom = new DOMDocument();
+                libxml_use_internal_errors( true );
+                $dom->loadHTML( $html );
+                libxml_clear_errors();
+                $xpath = new DOMXPath($dom);
+            }catch( Exception $e ) {
+                $this->log( 'Error in $hcpp->append: ' . $e->getMessage() );
+                echo $html;
+                return;
+            }
 
             // Get the path
             if ( isset( $_GET['p'] ) ) {
@@ -417,16 +423,19 @@ if ( !class_exists( 'HCPP') ) {
          * @return string The repo's version tag.
          */
         public function get_repo_folder_tag( $folder ) {
-            $cmd = "cd $folder && git describe --tags --abbrev=0 2>&1"; // Redirect stderr to stdout
-            $tag = trim( shell_exec( $cmd ) );
-            if ( strpos( $tag, 'fatal' ) !== false ) {
-                $cmd = "cd $folder && git describe --all 2>&1"; // Redirect stderr to stdout
+            $tag = '';
+            if ( is_dir( $folder . '/.git' ) ) {
+                $cmd = "cd $folder && git describe --tags --abbrev=0 2>&1"; // Redirect stderr to stdout
                 $tag = trim( shell_exec( $cmd ) );
-                $tag = explode( '/', $tag );
-                $tag = end( $tag );
-            }
-            if ( strpos( $tag, 'fatal' ) !== false ) {
-                $tag = '';
+                if ( strpos( $tag, 'fatal' ) !== false ) {
+                    $cmd = "cd $folder && git describe --all 2>&1"; // Redirect stderr to stdout
+                    $tag = trim( shell_exec( $cmd ) );
+                    $tag = explode( '/', $tag );
+                    $tag = end( $tag );
+                }
+                if ( strpos( $tag, 'fatal' ) !== false ) {
+                    $tag = '';
+                }
             }
             return $tag;
         }
@@ -848,7 +857,7 @@ if ( !class_exists( 'HCPP') ) {
          * @return mixed The output of the command; automatically returns JSON decoded if applicable.
          */
         public function run( $cmd ) {
-            $cmd = 'sudo /usr/local/hestia/bin/' . $cmd; 
+            $cmd = 'sudo /usr/local/hestia/bin/' . $cmd;
             $output = shell_exec( $cmd );
             if ( strpos( $cmd, ' json') !== false ) {
                 return json_decode( $output, true );
@@ -1210,14 +1219,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         $hcpp->add_action('hcpp_edit_server_xpath', function($xpath) use ($hcpp) {
 
             // Insert css style for version tag
-            $style = '<style>
-                        .pversion {
-                            font-size: smaller;
-                            float: right;
-                            font-weight: lighter;
-                            margin: 5px;
-                    }
-                      </style>';
+            $style = '<style>.pversion{float:right;font-size:smaller;margin:3px 2px 0 0;}</style>';
             $xpath = $hcpp->insert_html( $xpath, '/html/head', $style );
 
             // Process any POST request submissions
@@ -1230,7 +1232,6 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
             // Gather list of plugins and install state
             $plugins = glob( '/usr/local/hestia/plugins/*' );
-            $html = '';
             foreach( $plugins as $p ) {
                 
                 // Extract name form plugin.php header or default to folder name
@@ -1248,20 +1249,14 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
                 // Extract version if git repo
                 $version = '';
-                if ( is_dir( $p . '/.git' ) ) {
-                    $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
-                    $version = trim( $version );
-                    if ( $version != '' ) {
-                        $version = '<span class="pversion">' . $version . '</span>';
-                    }
-                }
+                $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
 
                 // Inject the pluginable plugin into the page
                 $h = '<div class="u-mb10">
                             <label for="hcpp_%name%" class="form-label">
                                 %label%
                             </label>
-                            %version%
+                            <span class="pversion">%version%</span>
                             <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
                                 <option value="no">' . _('No') . '</option>
                                 <option value="yes">' . _('Yes') . '</option>
@@ -1361,8 +1356,6 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
                 // Get current version and timestamp
                 $installed = $hcpp->get_repo_folder_tag( $folder );
-                $installed = $hcpp->delLeftMost( $installed, '/' );
-                $installed = trim( $hcpp->getLeftMost( $installed, "/n" ) );
 
                 // Get the timestamp of the cloned repo, and format it
                 $installed_timestamp = shell_exec( 'cd ' . $folder . ' && git log -1 --format=%cd' );
@@ -1422,14 +1415,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             // Return the version of the given plugin
             if ( $args[0] == 'get_plugin_version' ) {
                 $plugin = $args[1];
-                if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
-                    $version = shell_exec( "cd /usr/local/hestia/plugins/$plugin && git describe --all" );
-                }elseif ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
-                    $version = shell_exec( "cd /usr/local/hestia/plugins/$plugin.disabled && git describe --all" );
-                }else{
-                    $version = "\n";
-                }
-                $version = $hcpp->delLeftMost( $version, '/' );
+                $version = $hcpp->get_repo_folder_tag( '/usr/local/hestia/plugins/' . $plugin );
                 echo $version;
             }
 
