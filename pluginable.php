@@ -935,7 +935,6 @@ if ( !class_exists( 'HCPP') ) {
             $cmd = $this->do_action( 'hcpp_runuser_exec', $cmd );
             $result = shell_exec( $cmd );
             $result = $this->do_action( 'hcpp_runuser_result', $result );
-            $hcpp->log( $result );
             return $result;
         }
 
