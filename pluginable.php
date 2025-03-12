@@ -134,6 +134,7 @@ if ( !class_exists( 'HCPP') ) {
             
             // Get the DOMXPath object
             $html = ob_get_clean();
+            if ( $html == "" ) $html = "<html><head></head><body></body></html>";
             try {
                 $dom = new DOMDocument();
                 libxml_use_internal_errors( true );
@@ -1208,9 +1209,13 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
         // Restore jQuery in header
         $hcpp->add_action('hcpp_all_xpath', function($xpath) use ($hcpp) {
-            $scriptElement = $xpath->document->createElement('script');
-            $scriptElement->setAttribute('src', '/js/dist/jquery-3.7.1.min.js');
-            $xpath->query('/html/head')->item(0)->appendChild($scriptElement);        
+            try {
+                $scriptElement = $xpath->document->createElement('script');
+                $scriptElement->setAttribute('src', '/js/dist/jquery-3.7.1.min.js');
+                $xpath->query('/html/head')->item(0)->appendChild($scriptElement);  
+            }catch( Exception $e ) {
+                $hcpp->log( $e->getMessage() );
+            }
             return $xpath;
         });
 

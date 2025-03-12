@@ -209,7 +209,7 @@ You also have access to the `runuser` method that can be used to run any arbitua
 
 ```
 global $hcpp;
-$results = $hcpp->run( 'username', 'ls -laF' );
+$results = $hcpp->runuser( 'username', 'ls -laF' );
 ```
 
 &nbsp;
