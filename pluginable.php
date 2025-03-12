@@ -179,10 +179,12 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function copy_folder( $src, $dst, $user ) {
             // Append / to source and destination if necessary
+            global $hcpp;
             if (substr($src, -1) != '/') {
                 $src .= '/';
             }
             $dst = rtrim( $dst, '/' );
+            $hcpp->log("copy_folder $src to $dst for $user");
             if ( ! is_dir( $dst ) ) {
                 mkdir( $dst, 0750, true );
                 chown( $dst, $user );
