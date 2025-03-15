@@ -449,30 +449,35 @@ if ( !class_exists( 'HCPP') ) {
          * @param DOMXPath $xpath The DOMXPath object to use for querying the DOM.
          * @param string $query The query selector to use for selecting the target element.
          * @param string $html The HTML content to insert into the target element.
+         * @param bool $prepend Optional. If true, the HTML content will be prepended to the target element.
          * 
          * @return DOMXPath The updated DOMXPath object with the HTML content inserted.
          */
-        public function insert_html( $xpath, $query, $html ) {
+        public function insert_html( $xpath, $query, $html, $prepend = false ) {
 
-           // Append the pluginable plugins to the plugins section
-           $div_plugins = $xpath->query( $query );
-           if ($div_plugins->length > 0) {
-               $xml = $xpath->document->createDocumentFragment();
+            // Append the pluginable plugins to the plugins section
+            $div_plugins = $xpath->query( $query );
+            if ($div_plugins->length > 0) {
+                $xml = $xpath->document->createDocumentFragment();
 
-               // Use DOMDocument to validate and clean up the HTML string
-               $tempDom = new DOMDocument();
-               libxml_use_internal_errors(true);
-               $tempDom->loadHTML('<div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-               libxml_clear_errors();
+                // Use DOMDocument to validate and clean up the HTML string
+                $tempDom = new DOMDocument();
+                libxml_use_internal_errors(true);
+                $tempDom->loadHTML('<div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                libxml_clear_errors();
 
-               // Import the validated HTML into the fragment
-               foreach ($tempDom->documentElement->childNodes as $child) {
-                   $node = $xpath->document->importNode($child, true);
-                   $xml->appendChild($node);
-               }
+                // Import the validated HTML into the fragment
+                foreach ($tempDom->documentElement->childNodes as $child) {
+                    $node = $xpath->document->importNode($child, true);
+                    $xml->appendChild($node);
+                }
 
-               // Append the fragment to the target node
-               $div_plugins->item(0)->appendChild($xml);
+                // Prepend or append the fragment to the target node
+                if ($prepend) {
+                    $div_plugins->item(0)->insertBefore($xml, $div_plugins->item(0)->firstChild);
+                } else {
+                    $div_plugins->item(0)->appendChild($xml);
+                }
            } else {
                $this->log('No element found using query selector: ' . $query);
            }
