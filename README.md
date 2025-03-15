@@ -160,7 +160,7 @@ require_once( dirname(__FILE__) . '/myplugin.php' );
 <?php
 class MyPlugin extends HCPP_Hooks {
     public function v_list_sys_info_output( $args ) {
-        $args = str_replace( 'Debian', 'Commodore64', $args );
+        $args = str_replace( ['Ubuntu','Debian'], ['Apple ][e','Commodore64'], $args );
         return $args;
     }
 }
@@ -168,7 +168,7 @@ global $hcpp;
 $hcpp->register_plugin( MyPlugin::class );
 ```
 
-By using `extends HCPP_Hooks` you can immediately write public functions that respond to HestiaCP's action hooks. Simply name your functions with the appropiate prefix, i.e `hcpp_` for pluginable generated action hooks (see Noteworthy Action Hooks below) or `v_` for [HestiaCP's native CLI API](https://hestiacp.com/docs/reference/cli.html) commands. The example above will replace the string 'Debian' with 'Commodore64' in the CLI command v-list-sys-info output by hooking the `v_list_sys_info_output` action (note the `_output` suffix allows us to filter the output). For example, when the user types this command on the terminal or visits HestiaCP's Server Settings page (that uses the command) they will see 'Commodore64' listed as the operating system:
+By using `extends HCPP_Hooks` you can immediately write public functions that respond to HestiaCP's action hooks. Simply name your functions with the appropiate prefix, i.e `hcpp_` for pluginable generated action hooks (see Noteworthy Action Hooks below) or `v_` for [HestiaCP's native CLI API](https://hestiacp.com/docs/reference/cli.html) commands. The example above will replace the string 'Debian' with 'Commodore64' (or 'Ubuntu' with 'Apple ][e') in the CLI command v-list-sys-info output by hooking the `v_list_sys_info_output` action (note the `_output` suffix allows us to filter the output). For example, when the user types this command on the terminal or visits HestiaCP's Server Settings page (that uses the command) they will see 'Commodore64' listed as the operating system:
 
 ![Updates screen](./example.png)
 
