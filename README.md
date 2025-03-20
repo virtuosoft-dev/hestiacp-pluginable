@@ -83,6 +83,7 @@ A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X AP
 *Important Note: The following plugins are dependent on [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp), ensure you install [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp) first!*
 
 * [HCPP-VitePress](https://github.com/virtuosoft-dev/hcpp-vitepress)
+* [HCPP-NodeRED](https://github.com/virtuosoft-dev/hcpp-nodered)
 
 <!--
 * [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
