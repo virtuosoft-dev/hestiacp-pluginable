@@ -16,7 +16,6 @@
 global $hcpp;
 if ( !class_exists( 'HCPP') ) {
     class HCPP {
-
         public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
         public $prefixes = ['hcpp_', 'v_'];
         public $hcpp_filters = [];
@@ -1165,6 +1164,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
     // Load any plugins
     $plugins = glob( '/usr/local/hestia/plugins/*' );
+    $require_onces = [];
     foreach($plugins as $p) {
         if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
             continue;
@@ -1173,10 +1173,17 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         if ( $plugin_file != "/usr/local/hestia/plugins/index.php/plugin.php" ) {
             if ( file_exists( $plugin_file ) ) {
                 $prefix = strtolower( $hcpp->getRightMost( $p, '/' ) );
+
+                // Load prefixes first for HCPP_Hooks to be able to find the plugin
                 $hcpp->prefixes[] = $prefix . '_';
-                require_once( $plugin_file );
+                $require_onces[] = $plugin_file;
             }
         }
+    }
+
+    // Load the plugin files
+    foreach( $require_onces as $require_once ) {
+        require_once( $require_once );
     }
 
     // Run prepend code for web requests or bin_actions/install/remove for cli
@@ -1314,7 +1321,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
         // Check for updates to plugins daily
         $hcpp->add_action( 'v_update_sys_queue', function( $args ) use( $hcpp ) {
-            if ( isset( $args[0] ) && $args[0] === 'daily ') {
+            if ( isset( $args[0] ) && trim( $args[0] ) === 'daily') {
                 $hcpp->self_update();
                 $hcpp->update_plugins();
             }
