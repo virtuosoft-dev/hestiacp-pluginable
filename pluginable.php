@@ -1,25 +1,32 @@
 <?php
 /**
- * Our Hestia Control Panel Plugin (HCPP) actions/filter API. This file furnishes a basic 
- * WordPress-like API for extending/modifying HestiaCP's functionality. This file reads the
+ * Our Hestia Control Panel Plugin (HCPP) object. This file furnishes a basic action/filter, 
+ * WordPress-like, API for extending/modifying HestiaCP's functionality. This file reads the
  * /usr/local/hestia/plugins directory and loads any plugins found there. 
  * 
- * @version 1.0.0
- * @license GPL-3.0
+ *
+ * @author Virtuosoft/Stephen J. Carnam
+ * @license AGPL-3.0, for other licensing options contact support@virtuosoft.com
  * @link https://github.com/virtuosoft-dev/hestiacp-pluginable
  * 
  */
 
- if ( ! class_exists( 'HCPP') ) {
-    class HCPP {
 
+// Define HCPP if it doesn't already exist
+global $hcpp;
+if ( !class_exists( 'HCPP') ) {
+    class HCPP {
+        public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
+        public $prefixes = ['hcpp_', 'v_'];
         public $hcpp_filters = [];
         public $hcpp_filter_count = 0;
-        public $logging = false;
-        public $folder_ports = '/usr/local/hestia/data/hcpp/ports';
-        public $start_port = 50000;
+        public $html_content = '';
         public $installers = [];
-        
+        public $logging = false;
+        public $start_port = 50000;
+        public $custom_pages = [];
+        public $plugins = [];
+
         /**
          * Allow us to extend the HCPP dynamically.
          */
@@ -28,6 +35,15 @@
                 $func = $this->$method;
                 return call_user_func_array($func, $args);
             }
+        }
+
+        /**
+         * Our object contructor
+         */
+        public function __construct() {
+            $this->logging = file_exists( '/etc/hestiacp/hooks/logging' );
+            $this->add_action( 'v_check_user_password', [ $this, 'run_install_scripts' ] );
+            $this->add_action( 'v_check_user_password', [ $this, 'run_uninstall_scripts' ] );
         }
 
         /**
@@ -44,6 +60,16 @@
             $this->hcpp_filters[$tag][$idx] = $function_to_add;
             ksort($this->hcpp_filters[$tag]);
             return true;
+        }
+
+        /**
+         * Add a custom page to the HestiaCP UI that maintains the header, menu, and footer.
+         * 
+         * @param string $p The 'p' GET parameter to match to display the custom page.
+         * @param string $file The file to include when the 'p' GET parameter matches.
+         */
+        public function add_custom_page( $p, $file ) {
+            $this->custom_pages[$p] = $file;
         }
 
         /**
@@ -97,7 +123,79 @@
                 chgrp( $file, $user );
             }
             return $port;
-        }       
+        }
+
+        /**
+         * Define our append method to filter the output of the control panel.
+         */
+        public function append() {
+            $this->do_action( 'hcpp_append' );
+            
+            // Get the DOMXPath object
+            $html = ob_get_clean();
+            if ( $html == "" ) $html = "<html><head></head><body></body></html>";
+            try {
+                $dom = new DOMDocument();
+                libxml_use_internal_errors( true );
+                $dom->loadHTML( $html );
+                libxml_clear_errors();
+                $xpath = new DOMXPath($dom);
+            }catch( Exception $e ) {
+                $this->log( 'Error in $hcpp->append: ' . $e->getMessage() );
+                echo $html;
+                return;
+            }
+
+            // Get the path
+            if ( isset( $_GET['p'] ) ) {
+                $path = $_GET['p'];
+            }else{
+                $request_url = $_SERVER['REQUEST_URI'];
+                $parsed_url = parse_url( $request_url );
+                $path = trim( $parsed_url['path'], '/' );
+            }
+            $path = str_replace( ['/index.php', '/', '-'], ['', '_', '_'], $path );
+
+            // Run the path specific actions
+            if ( $path != 'index.php' ) {
+                $xpath = $this->do_action( 'hcpp_' . $path . '_xpath', $xpath );
+                $dom = $xpath->document;
+                $html = $dom->saveHTML();
+                $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
+            }
+
+            // Run all pages actions after specifics
+            $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
+            $dom = $xpath->document;
+            $html = $dom->saveHTML();
+            $html = $this->do_action( 'hcpp_all_html', $html );
+
+            echo $html;            
+        }
+
+        /**
+         * Copy a folder recursively, quickly, and retain/restore executable permissions.
+         */
+        public function copy_folder( $src, $dst, $user ) {
+            // Append / to source and destination if necessary
+            global $hcpp;
+            if (substr($src, -1) != '/') {
+                $src .= '/';
+            }
+            $dst = rtrim( $dst, '/' );
+            $hcpp->log("copy_folder $src to $dst for $user");
+            if ( ! is_dir( $dst ) ) {
+                mkdir( $dst, 0750, true );
+                chown( $dst, $user );
+                chgrp( $dst, $user );
+            }
+            $cmd = 'cp -RTp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
+            shell_exec( $cmd );
+            $cmd = 'find "' . $dst . '" -type f -perm /111 -exec chmod +x {} \;';
+            shell_exec( $cmd );
+            $cmd = 'find "' . $dst . '" -type d -perm /111 -exec chmod +x {} \;';
+            shell_exec( $cmd );
+        }
 
         /**
          * Delete a service port allocation.
@@ -144,6 +242,133 @@
             }
             $new_content = trim( $new_content );
             file_put_contents( $file, $new_content );
+        }
+
+        /**
+         * Invoke specific plugin action/filter hook.
+         * 
+         * @param string $tag The name of the action/filter hook.
+         * @param mixed $arg Optional. Arguments to pass to the functions hooked to the action/filter.
+         * @return mixed The filtered value after all hooked functions are applied to it.
+         */
+        public function do_action( $tag, $arg = '' ) {
+            if ($this->logging) {
+                $this->log( 'do action as ' . trim( shell_exec( 'whoami' ) ) . ', ' . $tag );
+                $this->log( $arg );
+            }
+            if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
+
+            $args = array();
+            if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
+                $args[] =& $arg[0];
+            else
+                $args[] = $arg;
+            for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
+                $args[] = func_get_arg($a);
+
+            foreach ( $this->hcpp_filters[$tag] as $func ) {
+                try {
+                    $arg = call_user_func_array( $func, $args );
+                } catch (Exception $e) {
+                    
+                    // Echo out the error message if an exception occurs
+                    echo 'Error: do_action failed ' . $e->getMessage();
+                    $this->log( 'Error: do_action failed ' . $e->getMessage() );
+                }
+                
+                if ($arg != null) {
+                    $args = array();
+                    if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
+                        $args[] =& $arg[0];
+                    else
+                        $args[] = $arg;
+                    for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
+                        $args[] = func_get_arg($a);
+                }
+            }
+            if (is_array($args) && 1 == count($args)) {
+                return $args[0];
+            }else{
+                return $args;
+            }
+        }
+
+        /**
+         * Find the latest git repo's non-beta release tag.
+         * 
+         * @param string $url The git repo URL.
+         * @return string The latest release tag.
+         */
+        public function find_latest_repo_tag( $url ) {
+            $this->log( 'Finding latest release tag for ' . $url );
+
+            // Execute the git ls-remote command
+            $command = "git ls-remote --tags --sort=\"version:refname\" $url";
+            $output = explode( PHP_EOL, shell_exec( $command ) );
+
+            // Extract version numbers
+            $versions = [];
+            foreach ($output as $line) {
+
+                // Omit $line if it contains the word beta
+                if (strpos($line, 'beta') !== false) {
+                    continue;
+                }
+                if (preg_match('/refs\/tags\/(v?[0-9]+\.[0-9]+\.[0-9]+)/', $line, $matches)) {
+                    $versions[] = $matches[1];
+                }
+            }
+
+            // Sort version numbers
+            usort($versions, 'version_compare');
+
+            // Get the most recent version number
+            $latestRelease = end($versions);
+            return $latestRelease;
+        }
+
+        /**
+         * Find the next unique service port number. 
+         * 
+         * @return int The next available port number. 
+         */
+        public function find_next_port() {
+ 
+            // Get list of existing Nginx port files
+            $files = array();
+            $iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $this->folder_ports ) );
+            foreach( $iterator as $file ) {
+                if ( !$file->isDir() && $file->getExtension() == 'ports' ) {
+                    $files[] = $file->getPathname();
+                }
+            }
+
+            // Read all port numbers from files
+            $used_ports = [];
+            foreach( $files as $file ) {
+                $content = file_get_contents( $file );
+                $content = explode( "\n", $content );
+
+                // Gather all port numbers
+                foreach( $content as $line ) {
+                    $parse = explode( ' ', $line );
+                    if ( isset( $parse[2] ) ) {
+                        $used_ports[] = intval( $parse[2] );
+                    }
+                }
+            }
+
+            // Find first available port from starting port
+            $port = $this->start_port;
+            while( in_array( $port, $used_ports ) ) {
+                $port++;
+            }
+
+            // Ensure port is available for service
+            while( !$this->is_service_port_free( $port ) ) {
+                $port++;
+            }
+            return $port;
         }
 
         /**
@@ -194,90 +419,310 @@
         }
 
         /**
-         * Find the next unique service port number. 
+         * Get the repo's version tag for the given repo's folder.
          * 
-         * @return int The next available port number. 
+         * @param string $folder The folder to get the repo's version tag for.
+         * @return string The repo's version tag.
          */
-        public function find_next_port() {
- 
-            // Get list of existing Nginx port files
-            $files = array();
-            $iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $this->folder_ports ) );
-            foreach( $iterator as $file ) {
-                if ( !$file->isDir() && $file->getExtension() == 'ports' ) {
-                    $files[] = $file->getPathname();
+        public function get_repo_folder_tag( $folder ) {
+            $tag = '';
+            if ( is_dir( $folder . '/.git' ) ) {
+                $cmd = "cd $folder && git describe --tags --abbrev=0 2>&1"; // Redirect stderr to stdout
+                $tag = trim( shell_exec( $cmd ) );
+                if ( strpos( $tag, 'fatal' ) !== false ) {
+                    $cmd = "cd $folder && git describe --all 2>&1"; // Redirect stderr to stdout
+                    $tag = trim( shell_exec( $cmd ) );
+                    $tag = explode( '/', $tag );
+                    $tag = end( $tag );
+                }
+                if ( strpos( $tag, 'fatal' ) !== false ) {
+                    $tag = '';
                 }
             }
-
-            // Read all port numbers from files
-            $used_ports = [];
-            foreach( $files as $file ) {
-                $content = file_get_contents( $file );
-                $content = explode( "\n", $content );
-
-                // Gather all port numbers
-                foreach( $content as $line ) {
-                    $parse = explode( ' ', $line );
-                    if ( isset( $parse[2] ) ) {
-                        $used_ports[] = intval( $parse[2] );
-                    }
-                }
-            }
-
-            // Find first available port from starting port
-            $port = $this->start_port;
-            while( in_array( $port, $used_ports ) ) {
-                $port++;
-            }
-            return $port;
+            return $tag;
         }
 
         /**
-         * Invoke specific plugin action/filter hook.
+         * Insert HTML content into the element with the specified DOMXPath query selector.
          * 
-         * @param string $tag The name of the action/filter hook.
-         * @param mixed $arg Optional. Arguments to pass to the functions hooked to the action/filter.
-         * @return mixed The filtered value after all hooked functions are applied to it.
+         * @param DOMXPath $xpath The DOMXPath object to use for querying the DOM.
+         * @param string $query The query selector to use for selecting the target element.
+         * @param string $html The HTML content to insert into the target element.
+         * @param bool $prepend Optional. If true, the HTML content will be prepended to the target element.
+         * 
+         * @return DOMXPath The updated DOMXPath object with the HTML content inserted.
          */
-        public function do_action( $tag, $arg = '' ) {
-            if ($this->logging) {
-                $this->log( 'do action as ' . trim( shell_exec( 'whoami' ) ) . ', ' . $tag );$this->log( $arg );
+        public function insert_html( $xpath, $query, $html, $prepend = false ) {
+
+            // Append the pluginable plugins to the plugins section
+            $div_plugins = $xpath->query( $query );
+            if ($div_plugins->length > 0) {
+                $xml = $xpath->document->createDocumentFragment();
+
+                // Use DOMDocument to validate and clean up the HTML string
+                $tempDom = new DOMDocument();
+                libxml_use_internal_errors(true);
+                $tempDom->loadHTML('<div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                libxml_clear_errors();
+
+                // Import the validated HTML into the fragment
+                foreach ($tempDom->documentElement->childNodes as $child) {
+                    $node = $xpath->document->importNode($child, true);
+                    $xml->appendChild($node);
+                }
+
+                // Prepend or append the fragment to the target node
+                if ($prepend) {
+                    $div_plugins->item(0)->insertBefore($xml, $div_plugins->item(0)->firstChild);
+                } else {
+                    $div_plugins->item(0)->appendChild($xml);
+                }
+           } else {
+               $this->log('No element found using query selector: ' . $query);
+           }
+           return $xpath;
+        }
+
+        /**
+         * Check if a TCP port is free for running a service.
+         *
+         * @param int $port The port number to check.
+         * @param string $host The host to check the port on (default is '127.0.0.1').
+         * @return bool True if the port is free, false if it is in use.
+         */
+        function is_service_port_free( $port, $host = '127.0.0.1' ) {
+            $socket = @socket_create( AF_INET, SOCK_STREAM, SOL_TCP );
+            if ( $socket === false ) {
+                // Failed to create socket
+                return false;
             }
-            if ( ! isset( $this->hcpp_filters[$tag] ) ) return $arg;
 
-            $args = array();
-            if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
-                $args[] =& $arg[0];
-            else
-                $args[] = $arg;
-            for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
-                $args[] = func_get_arg($a);
+            $result = @socket_bind( $socket, $host, $port );
+            if ( $result === false ) {
+                // Failed to bind socket, port is in use
+                socket_close( $socket );
+                return false;
+            }
 
-            foreach ( $this->hcpp_filters[$tag] as $func ) {
-                try {
-                    $arg = call_user_func_array( $func, $args );
-                } catch (Exception $e) {
-                    
-                    // Echo out the error message if an exception occurs
-                    echo 'Error: do_action failed ' . $e->getMessage();
-                    $this->log( 'Error: do_action failed ' . $e->getMessage() );
+            // Successfully bound socket, port is free
+            socket_close( $socket );
+            return true;
+        }
+
+        /**
+         * Define our install method to install the pluginable system.
+         */
+        public function install() {
+
+            // Create plugins folder
+            @mkdir( '/usr/local/hestia/plugins', 0755, true );
+
+            // Create the HCPP directory structure
+            @mkdir( '/usr/local/hestia/data/hcpp/installed', 0755, true );
+            @mkdir( '/usr/local/hestia/data/hcpp/uninstallers', 0755, true );
+
+            // // Copy local.conf to /etc/hestiacp/local.conf
+            // copy( __DIR__ . '/local.conf', '/etc/hestiacp/local.conf' );
+
+            // Append to /etc/hestiacp/local.conf
+            $local_conf = '';
+            if ( file_exists( '/etc/hestiacp/local.conf' ) ) {
+                $local_conf = file_get_contents( '/etc/hestiacp/local.conf' );
+            }
+            $local_conf .= "\nsource /etc/hestiacp/hooks/local.conf\n";
+            file_put_contents( '/etc/hestiacp/local.conf', $local_conf );
+
+            // Copy the prepend/append/pluginable system to /usr/local/hestia/data/hcpp
+            copy( '/etc/hestiacp/hooks/prepend.php', '/usr/local/hestia/data/hcpp/prepend.php' );
+            copy( '/etc/hestiacp/hooks/append.php', '/usr/local/hestia/data/hcpp/append.php' );
+
+            // Copy v-invoke-plugin to /usr/local/hestia/bin to allow invocation from API
+            copy( '/etc/hestiacp/hooks/v-invoke-plugin', '/usr/local/hestia/bin/v-invoke-plugin' );
+            chmod( '/usr/local/hestia/bin/v-invoke-plugin', 0755 );
+
+            // Install jQuery 3.7.1
+            shell_exec( 'wget -O /usr/local/hestia/web/js/dist/jquery-3.7.1.min.js https://code.jquery.com/jquery-3.7.1.min.js' );
+
+            // Patch /usr/local/hestia/php/lib/php.ini
+            $this->patch_file( 
+                '/usr/local/hestia/php/lib/php.ini',
+                "auto_append_file =\n",
+                'auto_append_file = /etc/hestiacp/hooks/pluginable.php'
+            );
+            $this->patch_file( 
+                '/usr/local/hestia/php/lib/php.ini',
+                "auto_prepend_file =\n",
+                'auto_prepend_file = /etc/hestiacp/hooks/pluginable.php'
+            );
+
+            // Patch Hestia templates php-fpm templates ..templates/web/php-fpm/*.tpl
+            $folderPath = "/usr/local/hestia/data/templates/web/php-fpm";
+            $files = glob( "$folderPath/*.tpl" );
+            foreach( $files as $file ) {
+                if ( strpos( $file, 'no-php.tpl' ) !== false ) {
+                    continue;
+                }
+                // Patch php-fpm templates open_basedir to include /usr/local/hestia/plugins and /usr/local/hestia/data/hcpp
+                $this->patch_file( 
+                    $file,
+                    "\nphp_admin_value[open_basedir] =",
+                    "\nphp_admin_value[open_basedir] = /home/%user%/.composer:/home/%user%/web/%domain%/public_html:/home/%user%/web/%domain%/private:/home/%user%/web/%domain%/public_shtml:/home/%user%/tmp:/tmp:/var/www/html:/bin:/usr/bin:/usr/local/bin:/usr/share:/opt:/usr/local/hestia/plugins:/usr/local/hestia/data/hcpp\n;php_admin_value[open_basedir] ="
+                );
+
+                // Patch php-fpm templates to support plugins prepend/append system
+                $this->patch_file( 
+                    $file,
+                    "\nphp_admin_value[open_basedir] =",
+                    "\nphp_admin_value[auto_prepend_file] = /usr/local/hestia/data/hcpp/prepend.php\n\nphp_admin_value[auto_append_file] = /usr/local/hestia/data/hcpp/append.php\nphp_admin_value[open_basedir] ="
+                );
+            }
+
+            // Patch /usr/local/hestia/func/domain.sh
+            $this->patch_file( 
+                '/usr/local/hestia/func/domain.sh',
+                'if [[ $backend_template =~ ^.*PHP-([0-9])\_([0-9])$ ]]; then',
+                'if [[ $backend_template =~ ^.*PHP-([0-9])\_([0-9])(.*)$ ]]; then'
+            );
+            $this->patch_file( 
+                '/usr/local/hestia/func/domain.sh',
+                '${BASH_REMATCH[1]}.${BASH_REMATCH[2]}',
+                '${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}'
+            );
+
+            // Comment out disable_functions in php.ini 
+            // (undo https://github.com/hestiacp/hestiacp/blob/main/CHANGELOG.md#1810---service-release)
+            shell_exec( 'sed -i \'s/^disable_functions =/;disable_functions =/g\' /etc/php/*/fpm/php.ini' );
+            shell_exec( 'sed -i \'s/^disable_functions =/;disable_functions =/g\' /etc/php/*/cli/php.ini' );
+
+            // Install the hcpp_rebooted action hook service
+            $serviceFile = '/etc/systemd/system/hcpp_rebooted.service';
+
+            // Check if the service file already exists
+            if (!file_exists($serviceFile)) {
+                $serviceContent = "[Unit]
+                    Description=Trigger hcpp_rebooted action hook
+                    After=network.target
+
+                    [Service]
+                    Type=oneshot
+                    ExecStartPre=/bin/sleep 10
+                    ExecStart=/usr/bin/php /etc/hestiacp/hooks/pluginable.php --rebooted
+
+                    [Install]
+                    WantedBy=multi-user.target
+                ";
+                
+                // Remove leading spaces from each line
+                $serviceContent = preg_replace('/^\s+/m', '', $serviceContent);
+                
+                file_put_contents($serviceFile, $serviceContent);
+                // Enable the service
+                exec('systemctl enable hcpp_rebooted.service');
+                echo "Installed hcpp_rebooted.service\n";
+            } else {
+                echo "hcpp_rebooted.service already exists. Skipping installation.\n";
+            }
+        }
+
+        /**
+         * Write a log message to the /tmp/hcpp.log file. Why here? Because
+         * we can't log UI events to /var/log/hestia/ because open_basedir,
+         * and we are logging privledged (root) and (admin) process space
+         * events and they are isolated. /tmp/ is the only safe place to
+         * write w/out causing runtime issues. 
+         * 
+         * @param mixed $msg The message or object to write to the log.
+         */
+        public function log( $msg ) {
+            if ( $this->logging == false ) return;
+
+            // Only write initial file if we're root and set permissions accordingly
+            if ( ! file_exists( '/tmp/hcpp.log' ) ) {
+                if ( posix_getpwuid( posix_geteuid() )['name'] == 'root' ) {
+                    touch( '/tmp/hcpp.log' );
+                    chmod( '/tmp/hcpp.log', 0666 );
+                }else{
+                    return;
+                }
+            }
+            
+            // Write timestamp and message as JSON to log file
+            $logFile = '/tmp/hcpp.log';
+            $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
+            $msg = json_encode( $msg, JSON_PRETTY_PRINT );
+            $msg = $t . ' ' . $msg;
+            $msg = substr( $msg, 0, 4096 );
+            $msg .= "\n";
+
+            // Use PHP's native error logging function
+            error_log( $msg, 3, $logFile );
+        }
+
+        /**
+         * patch_file function. 
+         * 
+         * Tests if the given file exists and  does not contain the content of replace;
+         * if missing it performs a search and replace on the file.
+         * 
+         * @param string $file The file to patch.
+         * @param string $search The search string.
+         * @param string $replace The replace string.
+         * @param boolean $backup If true, backup the file before patching.
+         */ 
+        public function patch_file( $file, $search, $replace, $backup = true ) {
+            if ( file_exists( $file ) ) {
+                $content = file_get_contents( $file );
+                if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
+
+                    // Backup file before patch with timestamp of patch yyyy_mm_dd_hh_mm
+                    $backup_file = $file . '.bak_' . date('Y_m_d_H_i');
+                    if ( !file_exists( $backup_file ) && $backup ) {
+                        copy( $file, $backup_file );
+                    }
+                    $content = str_replace( $search, $replace, $content );
+                    file_put_contents( $file, $content );
+                    $this->log( "Patched $file with $replace");
+                }else{
+                    if ( strstr( $content, $replace ) ) {
+                        $this->log( "Already patched $file with $replace" );
+                    }
+                }
+
+                // Report patch_file failures, Hestia version may not be compatible
+                if (!strstr( $content, $replace ) && !strstr( $content, $search ) ) {
+                    $this->log( "!!! Failed to patch $file with $replace" );
                 }
                 
-                if ($arg != null) {
-                    $args = array();
-                    if ( is_array($arg) && 1 == count($arg) && isset($arg[0]) && is_object($arg[0]) ) // array(&$this)
-                        $args[] =& $arg[0];
-                    else
-                        $args[] = $arg;
-                    for ( $a = 2, $num = func_num_args(); $a < $num; $a++ )
-                        $args[] = func_get_arg($a);
-                }
-            }
-            if (is_array($args) && 1 == count($args)) {
-                return $args[0];
             }else{
-                return $args;
+
+                // Report patch_file failures, Hestia version may not be compatible
+                $this->log( "!!! Failed to patch $file not found, with $replace" );
             }
+        }
+
+        /**
+         * Define our prepend method to capture the output of the control panel.
+         */
+        public function prepend() {
+            $this->do_action( 'hcpp_prepend' );
+            ob_start();
+            $this->do_action( 'hcpp_ob_started' );
+        }
+
+        /**
+         * Generate random alpha numeric for passwords, seeds, etc.
+         *
+         * @param int $length The length of characters to return.
+         * @param string $chars The set of possible characters to choose from.
+         * @return string The resulting randomly generated string.
+         */
+        public function random_chars( $length = 10, $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890' ) {
+            $string = '';
+            $max_index = strlen( $chars ) - 1;
+            for ( $i = 0; $i < $length; $i++ ) {
+                $string .= $chars[random_int( 0, $max_index )]; // random_int is more crypto secure
+            }
+            return $string;
         }
 
         /** 
@@ -295,7 +740,18 @@
                 $this->installers[] = $file;
             }
         }
-        
+
+        /**
+         * Register a plugin with the HestiaCP Pluginable object and create an instance of it.
+         * 
+         * @param object $plugin The plugin class to register and create.
+         */
+        public function register_plugin( $class ) {
+            $property = strtolower( (new \ReflectionClass( $class ))->getShortName() );
+            $this->$property = new $class();
+            $this->plugins[] = $this->$property;
+        }
+
         /**
          * Register a script to be executed after the plugin folder has been
          * from /usr/local/hestia/plugins deleted. 
@@ -311,12 +767,110 @@
         }
 
         /**
-         * Our object contructor
+         * Define our remove method to remove the pluginable system.
          */
-        public function __construct() {
-            $this->logging = file_exists( '/usr/local/hestia/data/hcpp/logging' );
-            $this->add_action( 'priv_check_user_password', [ $this, 'run_install_scripts' ] );
-            $this->add_action( 'priv_check_user_password', [ $this, 'run_uninstall_scripts' ] );
+        public function remove() {
+
+            // Remove data folder,local.conf, v-invoke-plugin, and restore original php.ini
+            shell_exec( 'rm -rf /usr/local/hestia/data/hcpp' );
+            shell_exec( 'rm -f /etc/hestiacp/local.conf' );
+            shell_exec( 'rm -f /usr/local/hestia/bin/v-invoke-plugin' );
+            $this->restore_backup( '/usr/local/hestia/php/lib/php.ini' );
+
+            // Remove jQuery 3.7.1
+            shell_exec( 'rm -f /usr/local/hestia/web/js/dist/jquery-3.7.1.min.js' );
+
+            // Restore Hestia templates php-fpm templates ..templates/web/php-fpm/*.tpl
+            $folderPath = "/usr/local/hestia/data/templates/web/php-fpm";
+            $files = glob( "$folderPath/*.tpl" );
+            foreach( $files as $file ) {
+                if ( strpos( $file, 'no-php.tpl' ) !== false ) {
+                    continue;
+                }
+
+                // Restore php-fpm templates
+                $this->restore_backup( $file );
+            }
+
+            // Restore /usr/local/hestia/func/domain.sh
+            $this->restore_backup( '/usr/local/hestia/func/domain.sh' );
+            
+            // Re-enable disable_functions in php.ini 
+            // (undo https://github.com/hestiacp/hestiacp/blob/main/CHANGELOG.md#1810---service-release)
+            shell_exec( 'sed -i \'s/^;disable_functions =/disable_functions =/g\' /etc/php/*/fpm/php.ini' );
+            shell_exec( 'sed -i \'s/^;disable_functions =/disable_functions =/g\' /etc/php/*/cli/php.ini' );
+
+            // Disable and remove the hcpp_rebooted service
+            $serviceFile = '/etc/systemd/system/hcpp_rebooted.service';
+            exec('systemctl disable hcpp_rebooted.service');
+            exec('systemctl stop hcpp_rebooted.service');
+        
+            // Remove the service file
+            if (file_exists($serviceFile)) {
+                unlink($serviceFile);
+                echo "Removed hcpp_rebooted.service\n";
+            } else {
+                echo "hcpp_rebooted.service does not exist. Skipping removal.\n";
+            }
+        
+            // Reload systemd to apply changes
+            exec('systemctl daemon-reload');
+        }
+
+        /**
+         * Define our method to restore a file from a backup.
+         * 
+         * @param string $file The file to restore.
+         */
+
+        public function restore_backup( $file ) {
+            // Get the directory and base name of the file
+            $dir = dirname( $file );
+            $base = basename( $file );
+        
+            // Find all backup files for the given file
+            $backup_files = glob( "$dir/$base.bak_*" );
+        
+            // Check if there are any backup files
+            if ( empty( $backup_files) ) {
+                $this->log( "No backup files found for $file" );
+                return false;
+            }
+        
+            // Sort the backup files by date (oldest first)
+            usort( $backup_files, function( $a, $b ) {
+                return filemtime( $a ) - filemtime( $b );
+            });
+        
+            // Choose the oldest backup file
+            $oldest_backup = $backup_files[0];
+        
+            // Restore the contents of the original file from the oldest backup file
+            if ( copy( $oldest_backup, $file ) ) {
+                // Remove the backup file after restoration
+                unlink( $oldest_backup );
+                $this->log( "Restored $file from $oldest_backup and removed the backup file" );
+                return true;
+            } else {
+                $this->log( "Failed to restore $file from $oldest_backup" );
+                return false;
+            }
+        }
+
+        /**
+         * Run a trusted API command and return JSON if applicable.
+         * 
+         * @param string $cmd The API command to execute along with it's arguments.
+         * @return mixed The output of the command; automatically returns JSON decoded if applicable.
+         */
+        public function run( $cmd ) {
+            $cmd = 'sudo /usr/local/hestia/bin/' . $cmd;
+            $output = shell_exec( $cmd );
+            if ( strpos( $cmd, ' json') !== false ) {
+                return json_decode( $output, true );
+            }else{
+                return $output;
+            }
         }
 
         /**
@@ -339,6 +893,10 @@
                 $this->log( shell_exec( $cmd ) );
                 $this->do_action( 'hcpp_plugin_installed', $plugin_name );
             }
+
+            // foreach( $this->plugins as $plugin ) {
+            //     if ( file_)
+            // }            
             return  $args;
         }
 
@@ -346,7 +904,6 @@
          * Run uninstall scripts for plugins that have been removed
          */
         public function run_uninstall_scripts( $args = null ) {
-            
             $uninstallers = glob( '/usr/local/hestia/data/hcpp/uninstallers/*' );
             foreach( $uninstallers as $file ) {
                 $plugin_name = pathinfo( $file, PATHINFO_FILENAME );
@@ -366,27 +923,7 @@
             }
             return  $args;
         }
-        /**
-         * Run a trusted API command and return JSON if applicable.
-         * 
-         * @param string $cmd The API command to execute along with it's arguments; the 'v-' prefix is optional.
-         * @return mixed The output of the command; automatically returns JSON decoded if applicable.
-         */
-        public function run( $cmd ) {
-            if ( file_exists( '/usr/local/hestia/bin/v-' . strtok( $cmd, " " ) ) ) {
-                $cmd = '/etc/hestiacp/hooks/bin_actions sudo ' . 'v-' . $cmd;
-            }
-            if ( file_exists( '/usr/local/hestia/bin/' . strtok( $cmd, " " ) ) ) {
-                $cmd = '/etc/hestiacp/hooks/bin_actions sudo ' . $cmd;
-            }
-            $output = shell_exec( $cmd );
-            if ( strpos( $cmd, ' json') !== false ) {
-                return json_decode( $output, true );
-            }else{
-                return $output;
-            }
-        }
-        
+
         /**
          * Run an arbituary command as the given user.
          *
@@ -394,157 +931,32 @@
          * @param string $cmd The command to execute.
          * @return string The output of the command.
          */
-         public function runuser( $user, $cmd ) {
-            $cmd = $this->do_action( 'hcpp_runuser', $cmd );
-            $cmd = "runuser -s /bin/bash -l $user -c " . escapeshellarg( 'cd /home/$user && ' . $cmd );
+        public function runuser( $user, $cmd ) {
+            $args = [ $user, $cmd ];
+            $args = $this->do_action( 'hcpp_runuser', $args );
+            $cmd = $args[1];
+            $user = $args[0];
+            $cmd = "runuser -s /bin/bash -l {$user} -c " . escapeshellarg( 'cd /home/' . $user . ' && ' . $cmd );
             global $hcpp;
             $hcpp->log( $cmd );
             $cmd = $this->do_action( 'hcpp_runuser_exec', $cmd );
             $result = shell_exec( $cmd );
-            $cmd = $this->do_action( 'hcpp_runuser_result', $cmd );
-            $hcpp->log( $result );
+            $result = $this->do_action( 'hcpp_runuser_result', $result );
             return $result;
-         }
-
-        /**
-         * Write a log message to the /tmp/hcpp.log file. Why here? Because
-         * we can't log UI events to /var/log/hestia/ because open_basedir,
-         * and we are logging privledged (root) and (admin) process space
-         * events and they are isolated. /tmp/ is the only safe place to
-         * write w/out causing runtime issues. 
-         * 
-         * @param mixed $msg The message or object to write to the log.
-         */
-        public function log( $msg ) {
-            if ( $this->logging == false ) return;
-
-            // Make sure log file is writable
-            $logFile = '/tmp/hcpp.log';
-            
-            // Write timestamp and message as JSON to log file
-            $t = (new DateTime('Now'))->format('H:i:s.') . substr( (new DateTime('Now'))->format('u'), 0, 2);
-            $msg = json_encode( $msg, JSON_PRETTY_PRINT );
-            $msg = $t . ' ' . $msg;
-            $msg .= "\n";
-
-            // Suppress warnings that can hang the UI (i.e. v-restart-web-backend)
-            $last_err_reporting = error_reporting();
-            error_reporting( E_ALL & ~E_WARNING );
-            try {
-                chmod( $logFile, 0666 );
-                file_put_contents( $logFile, $msg, FILE_APPEND );
-            }catch( Exception $e ) {
-                echo 'An error occured: ' . $e->getMessage();
-            }
-            error_reporting( $last_err_reporting );
-        }
-
-        /**
-         * patch_file function. 
-         * 
-         * Tests if the given file exists and  does not contain the content of replace;
-         * if missing it performs a search and replace on the file.
-         * 
-         * @param string $file The file to patch.
-         * @param string $search The search string.
-         * @param string $replace The replace string.
-         * @param boolean $retry_tabs If true, retry with spaces instead of tabs.
-         * @param boolean $backup If true, backup the file before patching.
-         */ 
-        public function patch_file( $file, $search, $replace, $retry_tabs = false, $backup = true ) {
-            if ( $retry_tabs ) {
-                $search = str_replace( "\t", '    ', $search );
-                $replace = str_replace( "\t", '    ', $replace );
-            }
-            if ( file_exists( $file ) ) {
-                $content = file_get_contents( $file );
-                if ( !strstr( $content, $replace ) && strstr( $content, $search ) ) {
-
-                    // Backup file before patch with timestamp of patch yyyy_mm_dd_hh_mm
-                    if ( !file_exists( $file . '.bak' ) && $backup ) {
-                        copy( $file, $file . '.bak_' . date('Y_m_d_H_i') );
-                    }
-                    $content = str_replace( $search, $replace, $content );
-                    file_put_contents( $file, $content );
-                    $this->log( "Patched $file with $replace");
-                }else{
-                    if ( strstr( $content, $replace ) ) {
-                        $this->log( "Already patched $file with $replace" );
-                    }
-                }
-
-                // Report patch_file failures, Hestia version may not be compatible
-                if (!strstr( $content, $replace ) && !strstr( $content, $search ) ) {
-                    if ( $retry_tabs ) {
-
-                        // Try second time with spaces instead of tabs
-                        $this->patch_file( $file, $search, $replace, true );
-                    }else{
-                        $this->log( "!!! Failed to patch $file with $replace" );
-                    }
-                }
-                
-            }else{
-
-                // Report patch_file failures, Hestia version may not be compatible
-                $this->log( "!!! Failed to patch $file not found, with $replace" );
-            }
-
-        }
-
-        /**
-         * Copy a folder recursively, quickly, and retain/restore executable permissions.
-         */
-        public function copy_folder( $src, $dst, $user ) {
-            // Append / to source and destination if necessary
-            if (substr($src, -1) != '/') {
-                $src .= '/';
-            }
-            $dst = rtrim( $dst, '/' );
-            if ( ! is_dir( $dst ) ) {
-                mkdir( $dst, 0750, true );
-                chown( $dst, $user );
-                chgrp( $dst, $user );
-            }
-            $cmd = 'cp -RTp ' . $src . ' ' . $dst . ' && chown -R ' . $user . ':' . $user . ' ' . $dst;
-            shell_exec( $cmd );
-            $cmd = 'find "' . $dst . '" -type f -perm /111 -exec chmod +x {} \;';
-            shell_exec( $cmd );
-            $cmd = 'find "' . $dst . '" -type d -perm /111 -exec chmod +x {} \;';
-            shell_exec( $cmd );
-        }
-
-        /**
-         * Re-apply pluginable when hestiacp core updates
-         */
-        public function update_core() {
-            $detail = $this->run( 'list-sys-info json' );
-            if ( !is_dir( '/usr/local/hestia/data/hcpp/' ) ) {
-                mkdir( '/usr/local/hestia/data/hcpp/', 0755, true );
-            }
-            $hestia = $detail['sysinfo']['HESTIA'];
-            if ( !file_exists( '/usr/local/hestia/data/hcpp/last_hestia.txt' ) ) {
-                file_put_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt', $hestia );
-            }
-            $last_hestia = file_get_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt' );
-            if ( $hestia != $last_hestia ) {
-                $this->log( 'HestiaCP core updated from ' . $last_hestia . ' to ' . $hestia );
-                $cmd = 'cd /etc/hestiacp/hooks && /etc/hestiacp/hooks/post_install.sh && service hestia restart';
-                $cmd = $this->do_action( 'hcpp_update_core_cmd', $cmd );
-                shell_exec( $cmd );
-            }
-            file_put_contents( '/usr/local/hestia/data/hcpp/last_hestia.txt', $hestia );
         }
 
         /**
          * Perform self update of the pluginable (hooks folder) from the git repo.
          */
         public function self_update() {
+            // Only run if autoupdate is enabled
+            if ( strpos( $this->run('v-list-sys-hestia-autoupdate'), 'Enabled') == false ) {
+                return;
+            }
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running self update...' );
             $url = 'https://github.com/virtuosoft-dev/hestiacp-pluginable';
-            $installed_version = shell_exec( 'cd /etc/hestiacp/hooks && git describe --tags --abbrev=0' );
-            $installed_version = trim( $installed_version );
+            $installed_version = $this->get_repo_folder_tag( '/etc/hestiacp/hooks' );
             $latest_version = $this->find_latest_repo_tag( $url );
             $this->log( 'Installed version: ' . $installed_version . ', Latest version: ' . $latest_version );
             if ( $installed_version != $latest_version && $latest_version != '' ) {
@@ -564,9 +976,50 @@
         }
 
         /**
+         * Append a new line to Hestia's shell formatted table
+         * 
+         * @param string $table The existing table as a string
+         * @param string $new_line The new line to append to the table
+         */
+        public function shell_table_append( $table, $new_line ) {
+
+            // Append new data
+            $table = trim( $table );
+            $lines = explode( "\n", $table );
+            $lines[] = $new_line;
+
+            // Parse the lines into a 2D array
+            $data = array_map( function ( $line ) {
+                return preg_split( '/\s+/', $line );
+            }, $lines );
+
+            // Determine the maximum width of each column
+            $maxWidths = array_reduce( $data, function ( $widths, $row ) {
+                foreach ( $row as $i => $cell ) {
+                    $widths[ $i ] = max( $widths[ $i ] ?? 0, strlen( $cell ) );
+                }
+                return $widths;
+            }, [] );
+
+            // Format the table with proper column widths
+            $formattedTable = array_map( function ( $row ) use ( $maxWidths ) {
+                return implode( '  ', array_map( function ( $cell, $i ) use ( $maxWidths ) {
+                    return str_pad( $cell, $maxWidths[ $i ] );
+                }, $row, array_keys( $row ) ) );
+            }, $data );
+
+            // Convert the formatted table back to a string
+            return implode( "\n", $formattedTable );
+        }
+
+        /**
          * Update plugins from their given git repo.
          */
         public function update_plugins() {
+            // Only run if autoupdate is enabled
+            if ( strpos( $this->run('v-list-sys-hestia-autoupdate'), 'Enabled') == false ) {
+                return;
+            }
             sleep(mt_rand(1, 30)); // stagger actual update check
             $this->log( 'Running update plugins...' );
             $pluginsDir = '/usr/local/hestia/plugins';
@@ -595,10 +1048,9 @@
                     if ( $url != '' ) {
 
                         // Get the installed version number of the plugin
-                        $installed_version = shell_exec( 'cd ' . $subfolder . ' && git describe --tags --abbrev=0' );
-                        $installed_version = trim( $installed_version );
+                        $installed_version = $this->get_repo_folder_tag( $subfolder );
                         $latest_version = $this->find_latest_repo_tag( $url );
-                        if ( $installed_version != $latest_version && $latest_version != '' ) {
+                        if ( $installed_version != $latest_version && $latest_version != '' && strlen( $installed_version ) < 18 ) {
 
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
@@ -618,40 +1070,6 @@
                     }
                 }
             }
-        }
-
-        /**
-         * Find the latest git repo's non-beta release tag.
-         * 
-         * @param string $url The git repo URL.
-         * @return string The latest release tag.
-         */
-        public function find_latest_repo_tag( $url ) {
-            $this->log( 'Finding latest release tag for ' . $url );
-
-            // Execute the git ls-remote command
-            $command = "git ls-remote --tags --sort=\"version:refname\" $url";
-            $output = explode( PHP_EOL, shell_exec( $command ) );
-
-            // Extract version numbers
-            $versions = [];
-            foreach ($output as $line) {
-
-                // Omit $line if it contains the word beta
-                if (strpos($line, 'beta') !== false) {
-                    continue;
-                }
-                if (preg_match('/refs\/tags\/(v?[0-9]+\.[0-9]+\.[0-9]+)/', $line, $matches)) {
-                    $versions[] = $matches[1];
-                }
-            }
-
-            // Sort version numbers
-            usort($versions, 'version_compare');
-
-            // Get the most recent version number
-            $latestRelease = end($versions);
-            return $latestRelease;
         }
 
         // *************************************************************************
@@ -737,289 +1155,372 @@
             return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
         }
     }
+}
 
-    // *************************************************************************
-    // * Initial HCPP behaviour
-    // *************************************************************************
-
-    global $hcpp;
+// Create the hcpp object if it doesn't already exist
+if ( !isset( $hcpp ) || $hcpp === null ) {
     $hcpp = new HCPP();
-
-    // Check/create plugins folder
-    $plugins_folder = '/usr/local/hestia/plugins';
-    if ( !is_dir( $plugins_folder ) ) {
-        mkdir( $plugins_folder );
-    }
+    require_once( __DIR__ . '/hcpp_hooks.php' );
 
     // Load any plugins
-    $plugins = glob( $plugins_folder . '/*' );
+    $plugins = glob( '/usr/local/hestia/plugins/*' );
+    $require_onces = [];
     foreach($plugins as $p) {
         if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
             continue;
-        }
+        }        
         $plugin_file = $p . '/plugin.php';
         if ( $plugin_file != "/usr/local/hestia/plugins/index.php/plugin.php" ) {
             if ( file_exists( $plugin_file ) ) {
-                require_once( $plugin_file );
+                $prefix = strtolower( $hcpp->getRightMost( $p, '/' ) );
+
+                // Load prefixes first for HCPP_Hooks to be able to find the plugin
+                $hcpp->prefixes[] = $prefix . '_';
+                $require_onces[] = $plugin_file;
             }
         }
     }
 
-    // Throw one-time hcpp_new_domain_ready via v-invoke-plugin hook when
-    // conf folder and public_html folders are first accessible
-    $hcpp->add_action( 'pre_add_fs_directory', function( $args ) {
-        global $hcpp;
-        $user = $args[0];
-        $domain = $args[1];
-        if ( $hcpp->getRightMost( $domain, '/' ) != 'public_html' ) return $args;
-        $domain = $hcpp->delRightMost( $domain, '/' );
-        $domain = $hcpp->getRightMost( $domain, '/' );
-        if ( file_exists( "/home/$user/web/$domain/public_html" ) ) return $args;
+    // Load the plugin files
+    foreach( $require_onces as $require_once ) {
+        require_once( $require_once );
+    }
 
-        // Fire off our delay script to await the new domain's folders
-        $cmd = "nohup /etc/hestiacp/hooks/await_domain.sh ";
-        $cmd .= escapeshellarg( $user ) . " ";
-        $cmd .= escapeshellarg( $domain );
-        $cmd .= ' > /dev/null 2>&1 &';
-        $hcpp->log( $cmd );
-        shell_exec( $cmd );
-        return $args;
-    });
+    // Run prepend code for web requests or bin_actions/install/remove for cli
+    if ( php_sapi_name() !== 'cli' ) {
 
-    // Delete the ports file when the domain is deleted
-    $hcpp->add_action( 'pre_delete_web_domain_backend', function( $args ) {
-        global $hcpp;
-        $user = $args[0];
-        $domain = $args[1];
-        if ( file_exists( "/usr/local/hestia/data/hcpp/ports/$user/$domain.ports" ) ) {
-            unlink( "/usr/local/hestia/data/hcpp/ports/$user/$domain.ports" );
-        }
-        return $args;
-    });
-
-    // Delete the ports/user folder when user is deleted
-    $hcpp->add_action( 'priv_delete_user', function( $args ) {
-        global $hcpp;
-        $user = $args[0];
-        if ( file_exists( "/usr/local/hestia/data/hcpp/ports/$user" ) ) {
-            shell_exec( "rm -rf /usr/local/hestia/data/hcpp/ports/$user" );
-        }
-        return $args;
-    });
-
-    // Throw hcpp_rebooted when the system has been started
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( $args[0] == 'hcpp_rebooted' ) {
-            global $hcpp;
-            $hcpp->self_update(); // Update pluginable on reboot
-            $hcpp->update_core(); // HestiaCP core may have updated before reboot, ensure pluginable is applied
-            $hcpp->do_action( 'hcpp_rebooted' );
-            $hcpp->update_plugins(); // Update plugins on reboot
-        }
-        return $args;
-    });
-        
-    // Throw hcpp_new_domain_ready via v-invoke-plugin hook
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( $args[0] == 'hcpp_new_domain_ready' ) {
-            global $hcpp;
-            array_shift( $args );
-            $hcpp->do_action( 'hcpp_new_domain_ready', $args );
-        }
-        return $args;
-    });
-
-    // Disable/enable/uninstall plugins via trusted command
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( count( $args ) < 3 ) return $args;
-        if ( $args[0] != 'hcpp_config' ) return $args;
-        $v = $args[1];
-        $plugin = $args[2];        
-        global $hcpp;
-        switch( $v ) {
-            case 'yes':
-                if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") ) {
-                    rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
-                    $hcpp->run( 'invoke-plugin hcpp_plugin_enabled ' . escapeshellarg( $plugin ) );
-                }
-                $hcpp->run_install_scripts();
-                break;
-            case 'no':
-                if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
-                    rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
-                }
-                break;
-            case 'uninstall':
-                if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
-                }
-                $hcpp->do_action( 'hcpp_plugin_uninstall', $plugin );
-                if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
-                    shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
-                    $hcpp->run_uninstall_scripts();
-                }
-                break;
-        }
-        return $args;
-    });
-
-    // Get plugin version via trusted command
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( $args[0] == 'hcpp_get_plugin_version' ) {
-            $plugin = $args[1];
-            $version = shell_exec( 'cd "' . $plugin . '" && git describe --tags --abbrev=0' );
-            echo $version;
-        }
-        return $args;
-    });
-
-    // Invoke plugin enabled after plugin is renamed and loaded
-    $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) {
-        if ( $args[0] == 'hcpp_plugin_enabled' ) {
-            $plugin = $args[1];
-            global $hcpp;
-            $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
-        }
-        return $args;
-    });
-
-    // List plugins in HestiaCP's Configure Server UI
-    $hcpp->add_action( 'hcpp_render_body', function( $args ) {
-        global $hcpp;
-        $content = $args['content'];
-        if ( false == ($args['page'] == 'edit_server' && $args['TAB'] == 'SERVER' ) ) {
-            return $args;
-        }
-
-        // Process any submissions
-        foreach( $_REQUEST as $k => $v ) {
-            if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
-                $plugin = substr( $k, 5 );
-                $hcpp->run( 'invoke-plugin hcpp_config ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
+        /**
+         * Route to any added custom pages
+         */
+        $hcpp->add_action( 'hcpp_ob_started', function() use ($hcpp) {
+            if ( ! isset( $_GET['p'] ) ) {
+                return;
             }
-        }
+            $page = filter_input(INPUT_GET, 'p', FILTER_SANITIZE_STRING);
+            if ( isset( $hcpp->custom_pages[ $page ] ) && file_exists( $hcpp->custom_pages[ $page ] ) ) {
+                
+                // Main include
+                $TAB = strtoupper( $page );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/main.php" );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/header.php" );
+                $panel = top_panel(empty($_SESSION["look"]) ? $_SESSION["user"] : $_SESSION["look"], $TAB);
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/inc/policies.php" );
 
-        // Parse the page content
-        $before = $hcpp->delRightMost( $content, 'name="v_firewall"' ) . 'name="v_firewall"';
-        $after = $hcpp->getRightMost( $content, 'name="v_firewall"' );
-
-        // Parse the page content under HestiaCP 1.6.X
-        $before .= $hcpp->getLeftMost( $after, '</div>' ) . '</div>';
-        $after = $hcpp->delLeftMost( $after, '</div>' );
-
-        // Create a block to list our plugins
-        $block = '<div class="u-mb10">
-                    <label for="hcpp_%name%" class="form-label">
-                        %label% <span style="font-size:smaller;font-weight:lighter;">(%version%)</span>
-                    </label>
-                    <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                        <option value="uninstall">Uninstall</option>
-                    </select>
-                    </div>';
-
-
-        // List the plugins 
-        $plugins = glob( '/usr/local/hestia/plugins/*' );
-        $insert = '';
-        foreach($plugins as $p) {
-
-            // Extract name from plugin.php header or default to folder name
-            if ( ! file_exists( $p . '/plugin.php' ) ) continue;
-            $label = file_get_contents( $p . '/plugin.php' );
-            $name = basename( $p, '.disabled' );
-            if ( strpos( $label, 'Plugin Name: ') !== false ) {
-                $label = $hcpp->delLeftMost( $label, 'Plugin Name: ' );
-                $label = trim( $hcpp->getLeftMost( $label, "\n") );
+                // Include custom page
+                require_once( $hcpp->custom_pages[ $page ] );
+                require_once( $_SERVER["DOCUMENT_ROOT"] . "/templates/footer.php" );
+                $hcpp->append();
             }else{
-                $label = $name;
-            }
 
-            // Extract version if git repo
-            $version = '';
-            if ( file_exists( $p . '/.git' ) ) {
-                $version = trim( $hcpp->run( 'invoke-plugin hcpp_get_plugin_version ' . escapeshellarg( $p ) ) );
-                $version = trim( $version );
+                // Abandon buffer and redirect to 404 page
+                ob_end_clean();
+                header("Location: /error/404.html");
             }
-            if ( is_dir( $p ) && ($p[0] != '.') ) {
-                if ( file_exists( $p . '/plugin.php' ) ) {
-                    $item = str_replace( array( '%label%', '%name%', '%version%' ), array( $label, $name, $version ), $block );
-                    if ( strpos( $p, '.disabled') === false) {
-                        $item = str_replace( 'value="yes"', 'value="yes" selected=true', $item );
-                    }else{
-                        $item = str_replace( 'value="no"', 'value="no" selected=true', $item );
-                    }
-                    $insert .= $item;
+            exit();
+
+        });
+        $hcpp->prepend();
+
+        // Restore jQuery in header
+        $hcpp->add_action('hcpp_all_xpath', function($xpath) use ($hcpp) {
+            try {
+                $scriptElement = $xpath->document->createElement('script');
+                $scriptElement->setAttribute('src', '/js/dist/jquery-3.7.1.min.js');
+                $xpath->query('/html/head')->item(0)->appendChild($scriptElement);  
+            }catch( Exception $e ) {
+                $hcpp->log( $e->getMessage() );
+            }
+            return $xpath;
+        });
+
+        // List pluginable plugins in the HestiaCP UI's edit server page
+        $hcpp->add_action('hcpp_edit_server_xpath', function($xpath) use ($hcpp) {
+
+            // Insert css style for version tag
+            $style = '<style>.pversion{float:right;font-size:smaller;margin:3px 2px 0 0;}</style>';
+            $xpath = $hcpp->insert_html( $xpath, '/html/head', $style );
+
+            // Process any POST request submissions
+            foreach( $_REQUEST as $k => $v ) {
+                if ( $hcpp->str_starts_with( $k, 'hcpp_' ) ) {
+                    $plugin = substr( $k, 5 );
+                    $hcpp->run( 'v-invoke-plugin hcpp_config ' . escapeshellarg( $v ) . ' ' . escapeshellarg( $plugin ) );
                 }
             }
+
+            // Gather list of plugins and install state
+            $plugins = glob( '/usr/local/hestia/plugins/*' );
+            foreach( $plugins as $p ) {
+                
+                // Extract name form plugin.php header or default to folder name
+                if ( !file_exists( $p . '/plugin.php' ) ) {
+                    continue;
+                }
+                $label = file_get_contents( $p . '/plugin.php' );
+                $name = basename( $p, '.disabled' );
+                if ( strpos( $label, 'Plugin Name: ') !== false ) {
+                    $label = $hcpp->delLeftMost( $label, 'Plugin Name: ' );
+                    $label = trim( $hcpp->getLeftMost( $label, "\n") );
+                }else{
+                    $label = $name;
+                }
+
+                // Extract version if git repo
+                $version = '';
+                $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
+
+                // Inject the pluginable plugin into the page
+                $h = '<div class="u-mb10">
+                            <label for="hcpp_%name%" class="form-label">
+                                %label%
+                            </label>
+                            <span class="pversion">%version%</span>
+                            <select class="form-select" name="hcpp_%name%" id="hcpp_%name%">
+                                <option value="no">' . _('No') . '</option>
+                                <option value="yes">' . _('Yes') . '</option>
+                                <option value="uninstall">' . _('Uninstall') . '</option>
+                            </select>
+                        </div>';
+                $h = str_replace( '%name%', $name, $h );
+                $h = str_replace( '%label%', $label, $h );
+                $h = str_replace( '%version%', $version, $h );
+                if ( strpos( $p, '.disabled' ) === false ) {
+                    $h = str_replace( 'value="yes"', 'value="yes" selected=true', $h );
+                }else{
+                    $h = str_replace( 'value="no"', 'value="no" selected=true', $h );
+                }
+                $h .= "\n";
+                $html .= $h;
+            }
+
+            // Append the pluginable plugins to the plugins section
+            $query = '//select[@id="v_plugin_app_installer"]/ancestor::div[contains(@class, "box-collapse-content")]';
+            $xpath = $hcpp->insert_html( $xpath, $query, $html );
+            return $xpath;
+        });
+
+    }else{
+
+        // Check for the --install option i.e. ( php -f pluginable.php --install )
+        if ( isset( $argv[1] ) && $argv[1] == '--install' ) {
+            $hcpp->install();
+            $hcpp->do_action( 'hcpp_post_install' );
         }
 
-        // Inject HestiaCP-Pluginable version
-        $version = trim( $hcpp->run( 'invoke-plugin hcpp_get_plugin_version "/etc/hestiacp/hooks"' ) );
-        $version = trim( $version );
-        $insert .= '<div class="u-mb10"><small style="float:right;">HestiaCP-Pluginable (' . $version . ')</small></div>';
-        $content = $before . $insert . $after;
-        $args['content'] = $content;
-        return $args;
-    });
-
-    // Check for updates to plugins daily
-    $hcpp->add_action( 'update_sys_queue', function( $args ) {
-        if (is_array($args) && count($args) === 1 && $args[0] === 'daily') {
-            global $hcpp;
-            $hcpp->self_update();
-            $hcpp->update_core();
-            $hcpp->update_plugins();
+        // Check for the --remove option i.e. ( php -f pluginable.php --remove )
+        if ( isset( $argv[1] ) && $argv[1] == '--remove' ) {
+            $hcpp->remove();
         }
-        return $args;
-    });
 
-    // Frequently check for updates in logging mode
-    if ( $hcpp->logging ) {
-        $hcpp->add_action( 'priv_update_sys_rrd', function( $args ) { // every 5 minutes
-        //$hcpp->add_action( 'priv_update_sys_queue', function( $args ) { // every 2 minutes
-            global $hcpp;
-            $hcpp->self_update();
-            $hcpp->update_core();
-            $hcpp->update_plugins();
+        // Check for the --rebooted option i.e. ( php -f pluginable.php --rebooted )
+        if ( isset( $argv[1] ) && $argv[1] == '--rebooted' ) {
+            $hcpp->self_update(); // Update pluginable on reboot
+            $hcpp->update_plugins(); // Update plugins on reboot
+            $hcpp->do_action( 'hcpp_rebooted' );
+        }
+
+        // Check for updates to plugins daily
+        $hcpp->add_action( 'v_update_sys_queue', function( $args ) use( $hcpp ) {
+            if ( isset( $args[0] ) && trim( $args[0] ) === 'daily') {
+                $hcpp->self_update();
+                $hcpp->update_plugins();
+            }
             return $args;
         });
-    }
-    
-    // Ensure we reload nginx to read our plugin configurations (req. by NodeApp, Collabora, etc.)
-    $hcpp->add_action( 'post_restart_service', function( $args ) {
-            global $hcpp;
-            $cmd = '(sleep 5 && service nginx reload) > /dev/null 2>&1 &';
-            $cmd = $hcpp->do_action( 'hcpp_nginx_reload', $cmd );
-            shell_exec( $cmd );
-    }, 50 );
 
-    // Restore jquery
-    $hcpp->add_action( 'hcpp_render_header', function( $args ) {
-        $content = $args['content'];
-        $inject = '<head><script src="/js/dist/jquery-3.7.0.min.js"></script>';
-        $content = str_replace( '<head>', $inject, $content );
-        $args['content'] = $content;
-        return $args;
-    } );
-}
-
-// Allow loading a plugin's index.php file if requested, sanitize request
-if ( php_sapi_name() !== 'cli' ) {
-    if ( isset( $_GET['load'] ) ) {
-        $load = $_GET['load'];
-        $load = str_replace(array('/', '\\'), '', $load);
-        if (empty($load) || !preg_match('/^[A-Za-z0-9_-]+$/', $load)) {
-            echo "Invalid plugin specified.";
-        } else {
-            $load = "/usr/local/hestia/plugins/$load/index.php";
-            if ( file_exists( $load ) ) {
-                require_once( $load );
-            }else{
-                echo "Plugin not found.";
-            }
+        // Check for updates frequently (every 5 minutes) if logging is enabled
+        if ( $hcpp->logging ) {
+            $hcpp->add_action( 'v_update_sys_rrd', function( $args ) use( $hcpp ) {
+                $hcpp->self_update();
+                $hcpp->update_plugins();
+                return $args;
+            });
         }
+
+        // Append to v-list-sys-hestia-updates our pluginable update/version info
+        $hcpp->add_action( 'v_list_sys_hestia_updates_output', function( $output ) use( $hcpp ) {
+
+            // Get CPU architecture (of HestiaCP system; all plugins should be cross platform)
+            $arch = php_uname('m') == 'x86_64' ? 'amd64' : (php_uname('m') == 'aarch64' ? 'arm64' : 'unknown');
+
+            // List of folders and their git repo urls to list in the update output
+            $git_folder_url = [
+                ['/etc/hestiacp/hooks', 'https://github.com/virtuosoft-dev/hestiacp-pluginable.git'] // HestiaCP Pluginable core
+            ];
+
+            // Add any plugins from /usr/local/hestia/plugins to list
+            $plugins = glob( '/usr/local/hestia/plugins/*' );
+            foreach( $plugins as $p ) {
+                if ( $hcpp->str_ends_with( $p, '.disabled' ) ) {
+                    continue;
+                }
+                if ( file_exists( $p . '/plugin.php' ) ) {
+                    $plugin_php = file_get_contents( $p . '/plugin.php' );
+                    if ( strpos( $plugin_php, 'Plugin URI: ') !== false ) {
+                        $url = $hcpp->delLeftMost( $plugin_php, 'Plugin URI: ' );
+                        $url = trim( $hcpp->getLeftMost( $url, "\n") );
+                        if ( str_ends_with( $url, '.git' ) === false ) {
+                            $url .= '.git';
+                        }
+                        $git_folder_url[] = [ $p, $url ];
+                    }
+                }
+            }
+
+            // Loop through each git's folder and url to obtain update/version info
+            foreach( $git_folder_url as $folder_url ) {
+                $folder = $folder_url[0];
+                $url = $folder_url[1];
+
+                // Get current version and timestamp
+                $installed = $hcpp->get_repo_folder_tag( $folder );
+
+                // Get the timestamp of the cloned repo, and format it
+                $installed_timestamp = shell_exec( 'cd ' . $folder . ' && git log -1 --format=%cd' );
+                $installed_timestamp = date( 'Y-m-d H:i:s', strtotime( $installed_timestamp ) );
+
+                // Get latest online tag version
+                $latest = $hcpp->find_latest_repo_tag( $url );
+
+                // Determine if the pluginable system is up to date
+                $updated = $installed == $latest ? 'yes' : 'no';
+
+                // Gather pluginable system info
+                $package_name = '';
+                $package_desc = '';
+                if ( file_exists( $folder . '/plugin.php') ) {
+                    $plugin_php = file_get_contents( $folder . '/plugin.php' );
+                    if ( strpos( $plugin_php, 'Description: ') !== false ) {
+                        $package_desc = $hcpp->delLeftMost( $plugin_php, 'Description: ' );
+                        $package_desc = trim( $hcpp->getLeftMost( $package_desc, "\n") );
+                    }
+                    if ( strpos( $plugin_php, 'Plugin URI: ') !== false ) {
+                        $package_name = $hcpp->delLeftMost( $plugin_php, 'Plugin URI: ' );
+                        $package_name = trim( $hcpp->getLeftMost( $package_name, "\n") );
+                        $package_name = basename( $package_name, '.git' );
+                    }
+                }else{
+                    $package_name = 'hestiacp-pluginable';
+                    $package_desc = 'Hestia control panel plugin system';
+                }
+
+                $info = array(
+                    'VERSION' => str_replace( ['version', 'v'], ['',''], $installed ),
+                    'ARCH' => $arch,
+                    'UPDATED' => $updated,
+                    'DESCR' => $package_desc,
+                    'TIME' => $hcpp->getRightMost( $installed_timestamp, ' ' ),
+                    'DATE' => $hcpp->getLeftMost( $installed_timestamp, ' ' )
+                );
+
+                // Check if first character is '{' to determine if JSON output
+                if ( substr( $output, 0, 1 ) == '{' ) {
+                    $output = json_decode( $output, true );
+                    $output[$package_name] = $info;
+                    $output = json_encode( $output, JSON_PRETTY_PRINT );
+                }else{
+                    $new_line = "{$package_name} {$info['VERSION']} {$info['ARCH']} {$info['UPDATED']} {$info['DATE']}";
+                    $output = $hcpp->shell_table_append( $output, $new_line );
+                }
+                $output .= "\n";
+            }
+            return $output;
+        });
+
+        // Process plugin invoke requests
+        $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) use( $hcpp ) {
+
+            // Return the version of the given plugin
+            if ( $args[0] == 'get_plugin_version' ) {
+                $plugin = $args[1];
+                $version = $hcpp->get_repo_folder_tag( '/usr/local/hestia/plugins/' . $plugin );
+                echo $version;
+            }
+
+            // Enable/Disable a plugin
+            if ( $args[0] == 'hcpp_config' ) {
+                $v = $args[1];
+                $plugin = $args[2];
+                switch( $v ) {
+                    case 'yes':
+                        if ( is_dir( "/usr/local/hestia/plugins/$plugin.disabled" ) ) {
+                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                            $hcpp->do_action( 'hcpp_plugin_enabled', $plugin );
+                        }
+                        break;
+                    case 'no':
+                        if ( is_dir( "/usr/local/hestia/plugins/$plugin" ) ) {
+                            rename( "/usr/local/hestia/plugins/$plugin", "/usr/local/hestia/plugins/$plugin.disabled" );
+                            $hcpp->do_action( 'hcpp_plugin_disabled', $plugin );
+                        }
+                        break;
+                    case 'uninstall':
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin.disabled") && !file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            rename( "/usr/local/hestia/plugins/$plugin.disabled", "/usr/local/hestia/plugins/$plugin" );
+                        }
+                        $hcpp->do_action( 'hcpp_plugin_uninstall', $plugin );
+                        if ( file_exists( "/usr/local/hestia/plugins/$plugin") ) {
+                            shell_exec( "rm -rf /usr/local/hestia/plugins/$plugin" );
+                            $hcpp->run_uninstall_scripts();
+                        }
+                        break;
+                }
+            }
+            return $args;
+        });
+
+        // Check for a /usr/local/hestia/bin/v- action via /etc/hestiacp/local.conf
+        // and invoke any add_actions
+        if ( isset( $argv[1] ) && strpos( $argv[1], 'v-' ) === 0 ) {
+            $bin_command = str_replace( '-', '_', $argv[1] );
+
+            // Get the remaining arguments after argv[1], if any otherwise set to empty array
+            $args = array_slice( $argv, 2 );
+
+            // Remove double slash encoding and double single quotes from arguments
+            $args = array_map(function($arg) {
+                return str_replace(["''",'\\'], ['',''], $arg);
+            }, $args);
+            $args = $hcpp->do_action( $bin_command, $args );
+
+            // Escape the remaining arguments
+            $args = implode( ' ', array_map( 'escapeshellarg', $args ) );
+
+            // Run the original command with the new arguments
+            $cmd = "/usr/local/hestia/bin/$argv[1] $args";
+            
+            $descriptorspec = array(
+                0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+                1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+                2 => array("pipe", "w") // stderr is a file to write to
+            );
+            $process = proc_open( $cmd, $descriptorspec, $pipes, null, null );
+            fclose($pipes[0]);
+
+            // Obtain the original commands output and error stream content
+            $output = stream_get_contents($pipes[1]);
+            $error = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $return_val = proc_close( $process );
+
+            // Invoke any plugin post_ filters
+            $output = $hcpp->do_action( $bin_command . '_output', $output );
+
+            // Return the resulting output, error, and return value to the original caller
+            $hOut = fopen( 'php://stdout', 'w' );
+            $hErr = fopen( 'php://stderr', 'w' );
+            fwrite( $hOut, $output );
+            fwrite( $hErr, $error );
+            fclose( $hOut );
+            fclose( $hErr );
+            exit( $return_val );            
+        }
+    }
+}else{
+
+    // Run append code for web requests
+    if ( php_sapi_name() !== 'cli' ) {
+        $hcpp->append();
     }
 }

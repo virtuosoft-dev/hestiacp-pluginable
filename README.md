@@ -1,50 +1,92 @@
 # hestiacp-pluginable
 Extend [Hestia Control Panel](https://hestiacp.com) via a simple, WordPress-like plugins API. 
 
+![Updates screen](./screenshot.png)
+
+Version 2.x, now with a leaner design that uses HestiaCP 'sanctioned' /etc/hestiacp/local.conf and php.ini's native prepend/append system to extend HestiaCP with less modifications to core files. This makes install/uninstall a lot easier, less intrusive, and more forward compatible with HestiaCP updates. You will also find that version 2.x displays plugins and updates in the existing HestiaCP UI. See (#1 above) 'Updates' and 'Configure' in HestiaCP. Pluginable allows plugins (such as the [NodeApp plugin](https://github.com/virtuosoft-dev/hcpp-nodeapp) #2 above) to customize and react to virtually all aspects of the HestiaCP web UI and [CLI API](https://hestiacp.com/docs/reference/cli.html). Both the pluginable project and plugins that use it can receive updates directly from their respective git repositories.
+
 ## Requirements
 
-* Hestia Control Panel
+* Hestia Control Panel version 1.9.X or greater
 * Ubuntu or Debian Linux OS
 
 ## Installation
-First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `main.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
+First, back up your system! This install process will patch (__Read__: ___Permanently Alter___) HestiaCP files and templates. A backup of the original file is created with a timestamp extension, i.e. `domain.sh.bak_2023_06_10_21_02`. The files in the following folders will be altered during installation and after every update:
 
 * /etc/hestiacp/hooks
 * /usr/local/hestia/data/templates/web/php-fpm
-* /usr/local/hestia/web/templates
-* /usr/local/hestia/web/inc
-* /usr/local/hestia/web/api
+* /usr/local/hestia/php/lib
 * /usr/local/hestia/func
 
-***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing pre_install.sh and post_install.sh files if you are using them.***
+***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing post_install.sh files if you are using them.***
 
-First, switch to root user:
+Clone the latest release version (i.e. replace **v2.0.0** below with the latest release version) to the hooks folder:
 ```
-sudo -s
-```
-
-Then simply clone the repo to the /etc/hestiacp/hooks folder:
-
-```
-git clone https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
+sudo git clone --branch v2.0.0 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
 ```
 
-Lastly, run the post_install.sh script and restart Hestia: 
+Run the post_install.sh script:
 
 ```
-/etc/hestiacp/hooks/post_install.sh
-service hestia restart
+sudo /etc/hestiacp/hooks/post_install.sh
 ```
 
-This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append (see the call to `patch_file` in the script for a list of changes). Currently, this project is compatible with HestiaCP v1.8.X in Nginx + Apache2 with Multi-PHP installation options.
+This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
+
+---
+
+## Uninstallation
+Uninstallation of Version 2.X is greatly simplified, removing the risk of perminently altering your HestiaCP install. Follow these steps to restore your stock HestiaCP installation:
+
+### Automatic Uninstall
+Run the following from the command line:
+```
+sudo php -f /etc/hestiacp/hooks/pluginable.php -- --uninstall
+```
+
+### Manual Uninstall
+
+1) Restore the original patched files with the .bak extension. i.e. if you see `domain.sh.bak_2023_06_10_21_02`, remove the existing `domain.sh` and rename `domain.sh.bak_2023_06_10_21_02` to `domain.sh`. Be sure to choose the .bak extension file with the most recent date if you see more than one. This will need to be performed for the following folders:
+
+* /usr/local/hestia/data/templates/web/php-fpm
+* /usr/local/hestia/php/lib
+* /usr/local/hestia/func
+
+2) Remove the pluginable files and the local.conf via sudo:
+
+```
+sudo rm /usr/local/hestia/bin/v-invoke-plugin
+sudo rm /etc/hestiacp/local.conf
+sudo rm /etc/hestiacp/hooks/*
+```
+
+3) Optionally remove Pluginable's data and plugin files:
+
+```
+sudo rm -rf /usr/local/hestia/plugins
+sudo rm -rf /usr/local/hestia/data/hcpp
+```
+
+&nbsp;
+&nbsp;
 
 ---
 
 &nbsp;
+&nbsp;
+
 ## Notable Plugins
-A number of plugins that use HestiaCP-Pluginable have been authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate) and can be found under the HCPP prefix on Virtuosoft's GitHub repo (Note: some repos may still be in development):
+A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X API and authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate). They can be found under the HCPP prefix on Virtuosoft's GitHub repo:
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
+
+*Important Note: The following plugins are dependent on [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp), ensure you install [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp) first!*
+
+* [HCPP-VitePress](https://github.com/virtuosoft-dev/hcpp-vitepress)
+* [HCPP-NodeRED](https://github.com/virtuosoft-dev/hcpp-nodered)
+* [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
+
+<!--
 * [HCPP-WebDAV](https://github.com/virtuosoft-dev/hcpp-webdav)
 * [HCPP-Collabora](https://github.com/virtuosoft-dev/hcpp-collabora)
 
@@ -57,7 +99,7 @@ A number of plugins that use HestiaCP-Pluginable have been authored by [Stephen 
 * [HCPP-VSCode](https://github.com/virtuosoft-dev/hcpp-vscode)
 * [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
 * [HCPP-Go](https://github.com/virtuosoft-dev/hcpp-go)
-
+-->
 
 ---
 
@@ -73,7 +115,7 @@ and contain the file plugin.php at:
 /usr/local/hestia/plugins/example/plugin.php
 ```
 
-A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call v-list-users is invoked, either by the REST API or website control panel would look like:
+A plugin can hook and respond to actions that HestiaCP invokes whenever an API call or control panel web page is viewed. A simple hook that can intercept whenever the API call [v-list-users](https://hestiacp.com/docs/reference/cli.html#v-list-user) is invoked, either by the REST API or website control panel would look like:
 
 ```
 <?php
@@ -83,7 +125,7 @@ A plugin can hook and respond to actions that HestiaCP invokes whenever an API c
  * Description: A sample plugin.
  */
 global $hcpp;
-$hcpp->add_action( 'list_users', function( $args ) {
+$hcpp->add_action( 'v_list_users', function( $args ) {
 
     global $hcpp;
     $hcpp->logging = true;
@@ -93,11 +135,46 @@ $hcpp->add_action( 'list_users', function( $args ) {
 });
 ```
 
-It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
+The `Plugin URI` is used by Pluginable to check for newer releases from the respective GitHub repository. The `Description` should be short and breif; it will be used to describe the plugin on the updates page (see screenshot at the top of this document). It is important that an $hcpp->add_action hook returns (passes along) the incoming argument (the `$args` parameter above). An optional third parameter can be passed for priority with the default being 10, [just like how WordPress does it](https://developer.wordpress.org/reference/functions/add_action/).
 
 The above sample plugin will write the arguments to `/tmp/hcpp.log` (if logging is on, see 'Debug Logging' below). 
 
-Note that the old "v-" prefix (that was used to denote the original VestaCP project that HestiaCP was derived from), is not needed to hook the action with the `$hcpp->add_action` function and that hyphens/dashes must be replaced with underscores. 
+Note that the hook is the same name as the HestiaCP command line API *but with underscores in place of hyphens*. 
+
+### Extending HCPP_Hooks Class
+Using the HCPP_Hooks class can greatly simplify plugin authoring. You may wish to group all of your plugin's action hooks, methods, and properties into a class and register it with Pluginable to organize your plugin's behaviors. A complex plugin that uses the traditional API can be found in the [HCPP-NodeApp plugin](https://github.com/virtuosoft-dev/hcpp-nodeapp). But a much simpler example using the HCPP_Hooks class can be found in the [HCPP-VitePress plugin](https://github.com/virtuosoft-dev/hcpp-vitepress). We can further illustrate using the HCPP_Hooks class to extend or alter HestiaCP with the example below:
+
+1) First; create the `plugin.php` file with a proper header and `require_once` the file containing your plugin's class. 
+```
+<?php
+/**
+ * Plugin Name: MyPlugin
+ * Plugin URI: https://github/virtuosoft/hcpp-myplugin
+ * Description: An example plugin using HCPP_Hooks
+ */
+
+require_once( dirname(__FILE__) . '/myplugin.php' );
+```
+
+2. Second; author your plugin's class to extend the HCPP_Hooks class. A detailed explanation of the code follows:
+```
+<?php
+<?php
+class MyPlugin extends HCPP_Hooks {
+    public function v_list_sys_info_output( $args ) {
+        $args = str_replace( ['Ubuntu','Debian'], ['Apple ][e','Commodore64'], $args );
+        return $args;
+    }
+}
+global $hcpp;
+$hcpp->register_plugin( MyPlugin::class );
+```
+
+By using `extends HCPP_Hooks` you can immediately write public functions that respond to HestiaCP's action hooks. Simply name your functions with the appropiate prefix, i.e `hcpp_` for pluginable generated action hooks (see Noteworthy Action Hooks below) or `v_` for [HestiaCP's native CLI API](https://hestiacp.com/docs/reference/cli.html) commands. The example above will replace the string 'Debian' with 'Commodore64' (or 'Ubuntu' with 'Apple ][e') in the CLI command v-list-sys-info output by hooking the `v_list_sys_info_output` action (note the `_output` suffix allows us to filter the output). For example, when the user types this command on the terminal or visits HestiaCP's Server Settings page (that uses the command) they will see 'Commodore64' listed as the operating system:
+
+![Updates screen](./example.png)
+
+By creating your class and registering it via `$hcpp->register_plugin` your plugin instance is created and can be referenced by other plugins by name within the HCPP object. For example, the `$hcpp->myplugin` property will now hold a reference to your plugin and can be accessed by other plugin authors. This is how the VitePress plugin can utilize the NodeApp plugin (via `$hcpp->nodeapp`) to implement VitePress features.
 
 &nbsp;
 ### Registering Install and Uninstall Scripts
@@ -127,33 +204,63 @@ You can run any of HestiaCP's API commands using the HCPP object's `run` method.
 
 ```
 global $hcpp;
-$all_users = $hcpp->run('list-users json');
+$all_users = $hcpp->run('v-list-users json');
 ```
 
 You also have access to the `runuser` method that can be used to run any arbituary command as a given Linux user; the following would list the contents of the user's home folder:
 
 ```
 global $hcpp;
-$results = $hcpp->run( 'username', 'll' );
+$results = $hcpp->runuser( 'username', 'ls -laF' );
 ```
 
 &nbsp;
-### Invoking Plugins Directly
-You can invoke your plugins directly by simply including an `index.php` file within your plugin folder. Only index.php is accessible via the URL of the Hestia Control Panel + your plugin's name as a GET load parameter. For instance (given your control panel is at https://local.dev.pw:8083), if you wanted to furnish AJAX responses or serve arbitrary content, your plugin's index.php file would be accessible via:
+### Noteworthy Action Hooks
+You can invoke your plugins early by hooking the `hcpp_prepend` and/or `hcpp_ob_started` actions as these are fired with every UI screen of the HestiaCP web interface. You can scan the source code of pluginable.php and look for source that invokes the `do_action` method. Additional actions, their parameters, and their descriptions are listed below:
+
+* `hcpp_prepend` - Occurs at start, when a HestiaCP UI's web page is requested.
+* `hcpp_append` - Occurs at end, when a HestiaCP UI's web page is about to be sent.
+* `hcpp_ob_started` - Occurs at after initial output buffer is started, when a HestiaCP UI's web page is requested.
+* `hcpp_plugin_installed` - $plugin_name, Occurs when a plugin is installed.
+* `hcpp_plugin_uninstalled` - $plugin_name, Occurs when a plugin is uninstalled.
+* `hcpp_runuser` - [$user, $cmd], Occurs when $hcpp->runuser method is invoked.
+* `hcpp_runuser_exec` - $cmd, Occurs when $hcpp->runuser method is invoked and the command is about to be executed.
+* `hcpp_runuser_result` - $result, Occurs after $hcpp->runuser executes a command and the results are returned. 
+* `hcpp_post_install` - Occurs when the HestiaCP system has been updated and a new version has finished installing. 
+* `hcpp_rebooted` - Occurs after the operating system has been rebooted.
+* `hcpp_plugin_enabled` - $plugin, Occurs when the given plugin has been enabled.
+* `hcpp_plugin_disabled` - $plugin, Occurs when the given plugin has been disabled.
+
+All HestiaCP web UI pages can be altered using the `_xpath` and `_html` based action hooks. For instance, when the user requests the URL from a HestiaCP instance at https://cp.example.com/list/web. Notice that the slashes after the domain has been changed to underscores and the `_xpath` and `_html` extension has been added to the action name along with the `hcpp_` prefix. Therefore plugin developers can alter the output of the HestiaCP's listing of websites on the web tab by implementing hooks for one or more of the following actions:
+
+* `hcpp_list_web_xpath` - $xpath, Invoked when a HestiaCP web page is about to be sent; the $xpath contains a PHP DOMXPath object that can be used to modify the output.  
+* `hcpp_list_web_html` - $html, Invoked when a HestiaCP web page is about to be sent; the $html contains the raw HTML source code that can be modified before it is sent.  
+* `hcpp_all_xpath` - $xpath, Occurs for every HestiaCP web page that is requested; the $xpath contains a PHP DOMXPath object that can be used to modify the output.
+* `hcpp_all_html` - $html, Occurs for every HestiaCP web page that is requested; the $html contains the raw HTML source code that can be modified before it is sent.
+
+
+All [HestiaCP CLI commands](https://hestiacp.com/docs/reference/cli.html) can be hooked by their given name. In most cases you can alter the parameters passed to the command before the command is actually executed. This powerful method allows plugins do alter or enhance the behavior of HestiaCP. 
+
+For example: If the CLI command to list details of a user account by name were invoked via the example CLI: `v-list-user admin`; the following action hooks will be called:
+
+* `v_list_user` - $args would contain the paramters passed to the command as an array; i.e. $args[0] would contain `admin` given the example above. It is important to return the $args array (with optional modifications) to be executed by HestiaCP's original CLI command.
+* `v_list_user_output` - $output would contain the output of the HestiaCP's v-list-user CLI command. It is important to return the $output variable for callers to receive the results from invoking the original HestiaCP CLI command.
+
+The example above illustrates how a HestiaCP Pluginable plugin can use action hooks to receive and alter arguments destined for HestiaCP's native CLI API as well as receive and alter the resultes of those commands before these are returned to the caller.
+
+### Adding a Custom Page to Hestia's UI
+Pluginable features an easy way to add a custom page to HestiaCP web UI, for example:
 
 ```
-https://local.dev.pw:8083/pluginable.php?load=myplugin
+global $hcpp;
+$hcpp->add_custom_page( 'nodeapp', __DIR__ . '/pages/nodeapp.php' );
 ```
 
-The above URL would execute and serve the file at:
-
-```
-/usr/local/hestia/plugins/myplugin/index.php
-```
+This would add a custom page to display the contents of the nodeapp.php when the user visits the URL https://cp.example.com/?p=nodeapp. The standard HestiaCP header, menu tabs, and footer, stylesheets, etc. will automatically be prepended and appended to the output. The plugin developer only needs to worry about including the optional toolbar and container div tags. See the NodeApp's implementation of logs at: https://github.com/virtuosoft-dev/hcpp-nodeapp/blob/main/pages/nodeapplog.php
 
 &nbsp;
 ### Hosted Site Prepends and Appends 
-The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file). This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as [WordFence](https://www.wordfence.com/help/firewall/optimizing-the-firewall/), [ISPProtect](https://ispprotect.com/ispprotect-bandaemon/), etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
+The HestiaCP Pluginable project includes special functionality for processing [PHP auto prepend and auto append directives](https://www.php.net/manual/en/ini.core.php#ini.auto-prepend-file) ***on the hosted sites***. This functionality allows a plugin to execute isolated code that is not apart of Hestia Control Panel actions, nor has access to the global $hcpp object; but rather as apart of all hosted sites running PHP. This feature is commonly used by anti-malware scanning applications (such as [WordFence](https://www.wordfence.com/help/firewall/optimizing-the-firewall/), [ISPProtect](https://ispprotect.com/ispprotect-bandaemon/), etc.), performance metric/tuning apps, or freemium hosting providers that wish to inject ads and other functionality into existing websites. 
 
 A plugin author can execute custom PHP for hosted sites by simply including a file named 'prepend.php' for execution before any hosted site scripts; and/or include a file named 'append.php' to execute code after any hosted site scripts. 
 
@@ -211,26 +318,27 @@ The plugin folder must have been initially installed using git and therefore sho
 
 An optional update script can be included with the plugin. Unlike the install and uninstall scripts; the update script does not need to be registered. Updates do not trigger the install script; but you may wish to invoke it on update's behalf. The update script will be passed two parameters; the current installed version (i.e. `v1.0.0`) and the newly installed version (i.e. `v2.0.0`). The optional update script is executed if present and only after after the repo has been updated. The update script feature allows plugin authors to make critical changes and apply patches if necessary to accomodate specific upgrade version migrations.
 
+
 &nbsp;
 ### Debug Logging
-You can view all the possible hook names that the hestiacp-pluginable API can respond to by turning logging on. Logging logs most operations via $hcpp->log function to /tmp/hcpp.log. To turn on logging, initiate the /tmp/hcpp.log with read/write access across the board; failure to do so may inhibit pluginable functionality as logging is initiated by multiple users and threads:
-
-```
-sudo touch /tmp/hcpp.log
-sudo chmod 666 /tmp/hcpp.log
-```
+You can view all the possible hook names that the hestiacp-pluginable API can respond to by turning logging on. Logging logs operations via $hcpp->log function to /tmp/hcpp.log. To turn on logging, simply include a file named logging in the hooks folder.
 
 To turn on logging:
 ```
-sudo touch /usr/local/hestia/data/hcpp/logging
+sudo touch /etc/hestiacp/hooks/logging
 ```
 
-To turn off logging, remove the file:
+To turn off logging:
 ```
-sudo rm -rf /usr/local/hestia/data/hcpp/logging
+sudo rm /etc/hestiacp/hooks/logging
 ```
 
-Note: the hcpp.log file is automatically created with open permissions for writing by both trusted root and admin users because Hestia sometimes executes privileged processes. Also, HestiaCP UI process does not have PHP access to /var/log/hestia due to open_basedir restrictions. /tmp/hcpp.log is a 'safe' file path; DO NOT delete this file as it can break runtime/logging/debugging. It is recommended you turn logging off for performance purposes. If you need to self-truncate the log simply use the command:
+Optionally, remove the log file:
+```
+sudo rm /tmp/hcpp.log
+```
+
+Note: the hcpp.log file is automatically created for writing by both trusted root and admin users because Hestia sometimes executes privileged processes. Also, HestiaCP UI process does not have PHP access to /var/log/hestia due to open_basedir restrictions. /tmp/hcpp.log is a 'safe' file path. If you need to self-truncate the log simply use the command:
 
 ```
 truncate -s 0 /tmp/hcpp.log
