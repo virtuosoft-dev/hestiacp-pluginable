@@ -319,6 +319,11 @@ if ( !class_exists( 'HCPP') ) {
                 }
             }
 
+            // Strip proceeding 'v' from version numbers
+            $versions = array_map(function($version) {
+                return ltrim($version, 'v');
+            }, $versions);
+            
             // Sort version numbers
             usort($versions, 'version_compare');
 
@@ -439,6 +444,7 @@ if ( !class_exists( 'HCPP') ) {
                     $tag = '';
                 }
             }
+            ltrim($tag, 'v');
             return $tag;
         }
 
