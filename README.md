@@ -84,6 +84,7 @@ A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X AP
 
 * [HCPP-VitePress](https://github.com/virtuosoft-dev/hcpp-vitepress)
 * [HCPP-NodeRED](https://github.com/virtuosoft-dev/hcpp-nodered)
+* [HCPP-NodeBB](https://github.com/virtuosoft-dev/hcpp-nodebb)
 * [HCPP-Ghost](https://github.com/virtuosoft-dev/hcpp-ghost)
 
 <!--
