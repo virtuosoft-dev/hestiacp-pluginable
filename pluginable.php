@@ -294,42 +294,56 @@ if ( !class_exists( 'HCPP') ) {
         }
 
         /**
-         * Find the latest git repo's non-beta release tag.
+         * Find the github repo's tag marked latest
          * 
          * @param string $url The git repo URL.
          * @return string The latest release tag.
          */
-        public function find_latest_repo_tag( $url ) {
-            $this->log( 'Finding latest release tag for ' . $url );
-
-            // Execute the git ls-remote command
-            $command = "git ls-remote --tags --sort=\"version:refname\" $url";
-            $output = explode( PHP_EOL, shell_exec( $command ) );
-
-            // Extract version numbers
-            $versions = [];
-            foreach ($output as $line) {
-
-                // Omit $line if it contains the word beta
-                if (strpos($line, 'beta') !== false) {
-                    continue;
+        public function find_latest_repo_tag($url) {
+            $this->log('Finding latest release tag for ' . $url);
+        
+            // Remove the trailing ".git" if it exists
+            $url = preg_replace('/\.git$/', '', $url);
+        
+            // Extract the owner and repository name from the GitHub URL
+            if (preg_match('/github\.com\/([^\/]+)\/([^\/]+)/', $url, $matches)) {
+                $owner = $matches[1];
+                $repo = $matches[2];
+        
+                // GitHub API URL for the latest release
+                $apiUrl = "https://api.github.com/repos/$owner/$repo/releases/latest";
+        
+                // Set up the HTTP headers for the API request
+                $headers = [
+                    'User-Agent: HestiaCP-Pluginable',
+                    'Accept: application/vnd.github.v3+json'
+                ];
+        
+                // Initialize a cURL session
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $apiUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+                // Execute the cURL request
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+        
+                // Check if the request was successful
+                if ($httpCode === 200) {
+                    $data = json_decode($response, true);
+                    if (isset($data['tag_name'])) {
+                        $this->log('Latest release tag found: ' . $data['tag_name']);
+                        return ltrim( $data['tag_name'], 'v');
+                    }
+                } else {
+                    $this->log('Failed to fetch latest release tag. HTTP Code: ' . $httpCode);
                 }
-                if (preg_match('/refs\/tags\/(v?[0-9]+\.[0-9]+\.[0-9]+)/', $line, $matches)) {
-                    $versions[] = $matches[1];
-                }
+            } else {
+                $this->log('Invalid GitHub URL: ' . $url);
             }
-
-            // Strip proceeding 'v' from version numbers
-            $versions = array_map(function($version) {
-                return ltrim($version, 'v');
-            }, $versions);
-            
-            // Sort version numbers
-            usort($versions, 'version_compare');
-
-            // Get the most recent version number
-            $latestRelease = end($versions);
-            return $latestRelease;
+            return null;
         }
 
         /**
