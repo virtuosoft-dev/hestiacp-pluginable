@@ -458,7 +458,7 @@ if ( !class_exists( 'HCPP') ) {
                     $tag = '';
                 }
             }
-            ltrim($tag, 'v');
+            $tag = ltrim($tag, 'v');
             return $tag;
         }
 
