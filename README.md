@@ -18,7 +18,14 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 * /usr/local/hestia/php/lib
 * /usr/local/hestia/func
 
-***Note: Pluginable uses the /etc/hestiacp/hooks folder in Hestia (not used in default installations). If you are using the hooks folder; backup it up! You'll need to manually merge any existing post_install.sh files if you are using them.***
+> [!Warning]
+> ***Until HestiaCP gets the attention and [funding it deserves (please consider donating)](https://hestiacp.com/donate.html); we recommand turning off auto-updates!!! Even though Pluginable is designed to auto-update and re-apply installation patches on HestiaCP updates, major and minor HestiaCP updates can break things. It is not recommended in production at this time. It is always best practice to check this readme before updating Pluginable or HestiaCP.***
+> 
+> ***As of this writing Pluginable v2.0.1 is compatible with HestiaCP v1.9.3.***
+> 
+> ***To turn off auto-updates:***
+> * Via Hestia Control Panel go to, `Server Settings->Updates->Disable Automatic Updates`
+> * Via the command line type, `sudo /usr/local/hestia/bin/v-delete-cron-hestia-autoupdate`.
 
 Clone the latest release version (i.e. replace **v2.0.0** below with the latest release version) to the hooks folder:
 ```
