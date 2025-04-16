@@ -335,7 +335,7 @@ if ( !class_exists( 'HCPP') ) {
                     $data = json_decode($response, true);
                     if (isset($data['tag_name'])) {
                         $this->log('Latest release tag found: ' . $data['tag_name']);
-                        return ltrim( $data['tag_name'], 'v');
+                        return $data['tag_name'];
                     }
                 } else {
                     $this->log('Failed to fetch latest release tag. HTTP Code: ' . $httpCode);
@@ -458,7 +458,6 @@ if ( !class_exists( 'HCPP') ) {
                     $tag = '';
                 }
             }
-            $tag = ltrim($tag, 'v');
             return $tag;
         }
 
@@ -979,7 +978,7 @@ if ( !class_exists( 'HCPP') ) {
             $installed_version = $this->get_repo_folder_tag( '/etc/hestiacp/hooks' );
             $latest_version = $this->find_latest_repo_tag( $url );
             $this->log( 'Installed version: ' . $installed_version . ', Latest version: ' . $latest_version );
-            if ( $installed_version != $latest_version && $latest_version != '' ) {
+            if ( ltrim($installed_version, 'v') != ltrim($latest_version, 'v') && $latest_version != '' ) {
 
                 // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                 $cmd = 'cd /etc/hestiacp/hooks && git reset --hard';
@@ -1070,7 +1069,7 @@ if ( !class_exists( 'HCPP') ) {
                         // Get the installed version number of the plugin
                         $installed_version = $this->get_repo_folder_tag( $subfolder );
                         $latest_version = $this->find_latest_repo_tag( $url );
-                        if ( $installed_version != $latest_version && $latest_version != '' && strlen( $installed_version ) < 18 ) {
+                        if ( ltrim($installed_version, 'v') != ltrim($latest_version,'v') && $latest_version != '' && strlen( $installed_version ) < 18 ) {
 
                             // Do a force reset on the repo to avoid merge conflicts, and obtain found latest version
                             $cmd = 'cd ' . $subfolder . ' && git reset --hard';
@@ -1403,7 +1402,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 $latest = $hcpp->find_latest_repo_tag( $url );
 
                 // Determine if the pluginable system is up to date
-                $updated = $installed == $latest ? 'yes' : 'no';
+                $updated = ltrim($installed, 'v') == ltrim($latest, 'v') ? 'yes' : 'no';
 
                 // Gather pluginable system info
                 $package_name = '';
