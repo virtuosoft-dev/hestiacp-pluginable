@@ -639,8 +639,9 @@ if ( !class_exists( 'HCPP') ) {
                 exec('systemctl enable hcpp_rebooted.service');
                 echo "Installed hcpp_rebooted.service\n";
             } else {
-                echo "hcpp_rebooted.service already exists. Skipping installation.\n";
+                echo "hcpp_rebooted.service already exists. Skipping.\n";
             }
+            echo "Install complete";
         }
 
         /**
