@@ -21,15 +21,15 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 > [!Warning]
 > Until HestiaCP gets the attention and [funding it deserves (please consider donating or contribute to testing)](https://hestiacp.com/donate.html); ***we recommand turning off auto-updates!!!*** Even though Pluginable is designed to auto-update and re-apply installation patches on HestiaCP core updates, there are not enough resources to test synchronized releases. It is not recommended to enable updates in production at this time. It is always best practice to check this readme before updating Pluginable or HestiaCP.
 > 
-> ***As of this writing Pluginable v2.0.1 has been tested to be compatible with HestiaCP v1.9.3.***
+> ***As of this writing Pluginable v2.0.3 has been tested to be compatible with HestiaCP v1.9.3.***
 > 
 > ***To turn off auto-updates:***
 > * Via Hestia Control Panel go to, `Server Settings->Updates->Disable Automatic Updates`
 > * Via the command line type, `sudo /usr/local/hestia/bin/v-delete-cron-hestia-autoupdate`.
 
-Clone the latest release version (i.e. replace **v2.0.1** below with the latest release version) to the hooks folder:
+Clone the latest release version (i.e. replace **v2.0.3** below with the latest release version) to the hooks folder:
 ```
-sudo git clone --branch v2.0.1 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
+sudo git clone --branch v2.0.3 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
 ```
 
 Run the post_install.sh script:
