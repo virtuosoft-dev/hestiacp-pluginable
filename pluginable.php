@@ -156,20 +156,23 @@ if ( !class_exists( 'HCPP') ) {
             }
             $path = str_replace( ['/index.php', '/', '-'], ['', '_', '_'], $path );
 
-            // Run the path specific actions
+            // Run the path specific actions for xpath
             if ( $path != 'index.php' ) {
                 $xpath = $this->do_action( 'hcpp_' . $path . '_xpath', $xpath );
-                $dom = $xpath->document;
-                $html = $dom->saveHTML();
-                $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
             }
 
-            // Run all pages actions after specifics
+            // Run all pages actions after specifics for xpath
             $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
             $dom = $xpath->document;
             $html = $dom->saveHTML();
-            $html = $this->do_action( 'hcpp_all_html', $html );
 
+            // Run the path specific actions for html
+            if ( $path != 'index.php' ) {
+                $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
+            }
+
+            // Run all pages actions after specifics for html
+            $html = $this->do_action( 'hcpp_all_html', $html );
             echo $html;            
         }
 
