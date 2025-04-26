@@ -86,6 +86,7 @@ sudo rm -rf /usr/local/hestia/data/hcpp
 A number of plugins that use HestiaCP-Pluginable have been updated to the 2.X API and authored by [Stephen J. Carnam @ Virtuosoft](https://virtuosoft.com/donate). They can be found under the HCPP prefix on Virtuosoft's GitHub repo:
 
 * [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp)
+* [HCPP-MagicLink](https://github.com/virtuosoft-dev/hcpp-magiclink)
 
 *Important Note: The following plugins are dependent on [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp), ensure you install [HCPP-NodeApp](https://github.com/virtuosoft-dev/hcpp-nodeapp) first!*
 
