@@ -165,6 +165,8 @@ if ( !class_exists( 'HCPP') ) {
             $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
             $dom = $xpath->document;
             $html = $dom->saveHTML();
+            $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, "UTF-8");
+            $html = str_replace(["&equals;","&period;"], ["=","."], $html);
 
             // Run the path specific actions for html
             if ( $path != 'index.php' ) {

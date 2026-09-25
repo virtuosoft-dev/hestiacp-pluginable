@@ -29,7 +29,7 @@ First, back up your system! This install process will patch (__Read__: ___Perman
 
 Clone the latest release version (i.e. replace **v2.0.4** below with the latest release version) to the hooks folder:
 ```
-sudo git clone --branch v2.0.4 https://github.com/virtuosoft-dev/hestiacp-pluginable /etc/hestiacp/hooks
+sudo git clone https://github.com/sharklatan/hestiacp-pluginable /etc/hestiacp/hooks
 ```
 
 Run the post_install.sh script:
