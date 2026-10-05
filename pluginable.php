@@ -1512,7 +1512,15 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
             // Run the original command with the new arguments
             $cmd = "/usr/local/hestia/bin/$argv[1] $args";
-            
+
+            // PATCH: if no plugin hooks the command's output (<command>_output), run it with
+            // inherited stdin/stdout/stderr so output streams in real time (and stdin works),
+            // instead of buffering everything until the command ends.
+            if ( empty( $hcpp->hcpp_filters[ $bin_command . '_output' ] ) ) {
+                $process = proc_open( $cmd, array( 0 => STDIN, 1 => STDOUT, 2 => STDERR ), $pipes, null, null );
+                exit( proc_close( $process ) );
+            }
+
             $descriptorspec = array(
                 0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
                 1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
