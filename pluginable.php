@@ -130,21 +130,9 @@ if ( !class_exists( 'HCPP') ) {
          */
         public function append() {
             $this->do_action( 'hcpp_append' );
-            
-            // Get the DOMXPath object
+
             $html = ob_get_clean();
             if ( $html == "" ) $html = "<html><head></head><body></body></html>";
-            try {
-                $dom = new DOMDocument();
-                libxml_use_internal_errors( true );
-                $dom->loadHTML( $html );
-                libxml_clear_errors();
-                $xpath = new DOMXPath($dom);
-            }catch( Exception $e ) {
-                $this->log( 'Error in $hcpp->append: ' . $e->getMessage() );
-                echo $html;
-                return;
-            }
 
             // Get the path
             if ( isset( $_GET['p'] ) ) {
@@ -156,17 +144,61 @@ if ( !class_exists( 'HCPP') ) {
             }
             $path = str_replace( ['/index.php', '/', '-'], ['', '_', '_'], $path );
 
-            // Run the path specific actions for xpath
-            if ( $path != 'index.php' ) {
-                $xpath = $this->do_action( 'hcpp_' . $path . '_xpath', $xpath );
+            // PERFORMANCE: parsing the whole page into a DOM and serializing it back is expensive, so it is
+            // done only when some plugin actually registered an xpath action for this page (or for all pages).
+            $need_dom = isset( $this->hcpp_filters['hcpp_all_xpath'] )
+                || ( $path != 'index.php' && isset( $this->hcpp_filters[ 'hcpp_' . $path . '_xpath' ] ) );
+            if ( $need_dom ) {
+                try {
+                    $dom = new DOMDocument();
+                    libxml_use_internal_errors( true );
+                    $dom->loadHTML( $html );
+                    libxml_clear_errors();
+                    $xpath = new DOMXPath($dom);
+                }catch( Exception $e ) {
+                    $this->log( 'Error in $hcpp->append: ' . $e->getMessage() );
+                    echo $html;
+                    return;
+                }
+
+                // Run the path specific actions for xpath
+                if ( $path != 'index.php' ) {
+                    $xpath = $this->do_action( 'hcpp_' . $path . '_xpath', $xpath );
+                }
+
+                // Run all pages actions after specifics for xpath
+                $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
+                $dom = $xpath->document;
+                $html = $dom->saveHTML();
+
+                // DOM serialization escapes non-ASCII characters and more: decode them back
+                $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, "UTF-8");
+                $html = str_replace(["&equals;","&period;"], ["=","."], $html);
+            }else{
+
+                // No DOM round trip. HestiaCP's tohtml() uses htmlentities(ENT_HTML5), so hrefs/titles arrive as
+                // "&period;", "&equals;", "&Vcy;"... which html hooks never saw before (the DOM path decoded them).
+                // Decode every named entity EXCEPT the markup-critical ones (&quot; &amp; &lt; &gt; &apos;), so
+                // attributes such as x-data="{ a: &quot;b&quot; }" stay intact while "&period;" -> "." etc.
+                // Finally "&amp;" -> "&" inside href values, as before.
+                if ( strpos( $html, '&' ) !== false ) {
+                    $html = preg_replace_callback( '~&([A-Za-z][A-Za-z0-9]{1,31});~', function( $m ) {
+                        $n = $m[1];
+                        if ( $n === 'quot' || $n === 'amp' || $n === 'lt' || $n === 'gt' || $n === 'apos' ) return $m[0];
+                        $d = html_entity_decode( $m[0], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+                        return $d === $m[0] ? $m[0] : $d;
+                    }, $html );
+                    $html = preg_replace_callback( '~(\shref=")([^"]*)(")~i', function( $m ) {
+                        return $m[1] . str_replace( '&amp;', '&', $m[2] ) . $m[3];
+                    }, $html );
+                }
             }
 
-            // Run all pages actions after specifics for xpath
-            $xpath = $this->do_action( 'hcpp_all_xpath', $xpath );
-            $dom = $xpath->document;
-            $html = $dom->saveHTML();
-            $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, "UTF-8");
-            $html = str_replace(["&equals;","&period;"], ["=","."], $html);
+            // Restore jQuery in the header (string insert; formerly an hcpp_all_xpath action)
+            $hcpp_jq_pos = stripos( $html, '</head>' );
+            if ( $hcpp_jq_pos !== false ) {
+                $html = substr_replace( $html, '<script src="/js/dist/jquery-3.7.1.min.js"></script>', $hcpp_jq_pos, 0 );
+            }
 
             // Run the path specific actions for html
             if ( $path != 'index.php' ) {
@@ -175,7 +207,7 @@ if ( !class_exists( 'HCPP') ) {
 
             // Run all pages actions after specifics for html
             $html = $this->do_action( 'hcpp_all_html', $html );
-            echo $html;            
+            echo $html;
         }
 
         /**
@@ -486,7 +518,9 @@ if ( !class_exists( 'HCPP') ) {
                 // Use DOMDocument to validate and clean up the HTML string
                 $tempDom = new DOMDocument();
                 libxml_use_internal_errors(true);
-                $tempDom->loadHTML('<div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                // Declare UTF-8 explicitly: without it, loadHTML() assumes ISO-8859-1 and mangles
+                // any non-ASCII text (Cyrillic plugin labels, etc.) inserted through this method.
+                $tempDom->loadHTML('<?xml encoding="utf-8" ?><div>' . $html . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
                 libxml_clear_errors();
 
                 // Import the validated HTML into the fragment
@@ -612,10 +646,22 @@ if ( !class_exists( 'HCPP') ) {
                 '${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}'
             );
 
-            // Comment out disable_functions in php.ini 
-            // (undo https://github.com/hestiacp/hestiacp/blob/main/CHANGELOG.md#1810---service-release)
-            shell_exec( 'sed -i \'s/^disable_functions =/;disable_functions =/g\' /etc/php/*/fpm/php.ini' );
-            shell_exec( 'sed -i \'s/^disable_functions =/;disable_functions =/g\' /etc/php/*/cli/php.ini' );
+            // PATCH: do not switch off disable_functions completely. In every fpm and cli php.ini only the
+            // functions pluginable needs are removed from the list; everything else stays disabled.
+            // The original list is saved next to php.ini (php.ini.hcpp.bak) and restored on uninstall.
+            $hcpp_allow = [ 'exec', 'shell_exec', 'proc_open', 'posix_getpwuid', 'posix_getuid', 'curl_init', 'curl_exec' ];
+            foreach ( glob( '/etc/php/*/{fpm,cli}/php.ini', GLOB_BRACE ) as $ini ) {
+                $content = file_get_contents( $ini );
+                if ( $content === false || ! preg_match( '/^;?disable_functions\s*=[ \t]*(.*)$/m', $content, $orig ) ) continue;
+                if ( ! file_exists( "$ini.hcpp.bak" ) ) file_put_contents( "$ini.hcpp.bak", $orig[1] );
+                $content = preg_replace_callback( '/^;?disable_functions\s*=[ \t]*(.*)$/m', function( $m ) use ( $hcpp_allow ) {
+                    $list = array_filter( array_map( 'trim', explode( ',', $m[1] ) ), function( $f ) use ( $hcpp_allow ) {
+                        return $f !== '' && ! in_array( $f, $hcpp_allow, true );
+                    } );
+                    return 'disable_functions = ' . implode( ',', $list );
+                }, $content );
+                file_put_contents( $ini, $content );
+            }
 
             // Install the hcpp_rebooted action hook service
             $serviceFile = '/etc/systemd/system/hcpp_rebooted.service';
@@ -784,7 +830,9 @@ if ( !class_exists( 'HCPP') ) {
 
             // Check if the uninstallers file already exists, if not; copy it over
             $plugin_name = basename( dirname( $file ) );
-            if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" ) ) {
+            // Only root can write there: panel (non-root) requests must not try, otherwise every request logs a warning.
+            if ( !file_exists( "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" )
+                && is_writable( '/usr/local/hestia/data/hcpp/uninstallers' ) ) {
                 copy( $file, "/usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
                 shell_exec( "chmod 700 /usr/local/hestia/data/hcpp/uninstallers/$plugin_name" );
             }
@@ -819,10 +867,21 @@ if ( !class_exists( 'HCPP') ) {
             // Restore /usr/local/hestia/func/domain.sh
             $this->restore_backup( '/usr/local/hestia/func/domain.sh' );
             
-            // Re-enable disable_functions in php.ini 
-            // (undo https://github.com/hestiacp/hestiacp/blob/main/CHANGELOG.md#1810---service-release)
-            shell_exec( 'sed -i \'s/^;disable_functions =/disable_functions =/g\' /etc/php/*/fpm/php.ini' );
-            shell_exec( 'sed -i \'s/^;disable_functions =/disable_functions =/g\' /etc/php/*/cli/php.ini' );
+            // Re-enable disable_functions in php.ini (PATCH: restore the original list saved at install)
+            foreach ( glob( '/etc/php/*/{fpm,cli}/php.ini', GLOB_BRACE ) as $ini ) {
+                $content = file_get_contents( $ini );
+                if ( $content === false ) continue;
+                if ( file_exists( "$ini.hcpp.bak" ) ) {
+                    $orig = trim( file_get_contents( "$ini.hcpp.bak" ) );
+                    $content = preg_replace_callback( '/^;?disable_functions\s*=[ \t]*(.*)$/m', function( $m ) use ( $orig ) {
+                        return 'disable_functions = ' . $orig;
+                    }, $content );
+                    file_put_contents( $ini, $content );
+                    unlink( "$ini.hcpp.bak" );
+                } else {
+                    file_put_contents( $ini, preg_replace( '/^;disable_functions =/m', 'disable_functions =', $content ) );
+                }
+            }
 
             // Disable and remove the hcpp_rebooted service
             $serviceFile = '/etc/systemd/system/hcpp_rebooted.service';
@@ -1220,7 +1279,7 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             if ( ! isset( $_GET['p'] ) ) {
                 return;
             }
-            $page = filter_input(INPUT_GET, 'p', FILTER_SANITIZE_STRING);
+            $page = is_string( $_GET['p'] ) ? strip_tags( $_GET['p'] ) : '';
             if ( isset( $hcpp->custom_pages[ $page ] ) && file_exists( $hcpp->custom_pages[ $page ] ) ) {
                 
                 // Main include
@@ -1245,17 +1304,8 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         });
         $hcpp->prepend();
 
-        // Restore jQuery in header
-        $hcpp->add_action('hcpp_all_xpath', function($xpath) use ($hcpp) {
-            try {
-                $scriptElement = $xpath->document->createElement('script');
-                $scriptElement->setAttribute('src', '/js/dist/jquery-3.7.1.min.js');
-                $xpath->query('/html/head')->item(0)->appendChild($scriptElement);  
-            }catch( Exception $e ) {
-                $hcpp->log( $e->getMessage() );
-            }
-            return $xpath;
-        });
+        // NOTE: jQuery restoration moved into append()'s plain string insert (no longer an
+        // hcpp_all_xpath action), so it doesn't force a DOM parse on every page by itself.
 
         // List pluginable plugins in the HestiaCP UI's edit server page
         $hcpp->add_action('hcpp_edit_server_xpath', function($xpath) use ($hcpp) {
@@ -1291,7 +1341,9 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
 
                 // Extract version if git repo
                 $version = '';
-                $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
+                if ( is_dir( $p . '/.git' ) ) { // PERFORMANCE: no extra process for plugins that are not git clones
+                    $version = $hcpp->run( 'v-invoke-plugin get_plugin_version ' . $name );
+                }
 
                 // Inject the pluginable plugin into the page
                 $h = '<div class="u-mb10">
@@ -1343,7 +1395,12 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             $hcpp->do_action( 'hcpp_rebooted' );
         }
 
-        // Check for updates to plugins daily
+        // Check for updates to plugins daily.
+        // PATCH: this hook only fires on the "daily" sub-command, so it does not add an extra
+        // proc_open layer to "backup" or "dns-cluster" runs - local.conf already keeps those two
+        // from ever reaching this php wrapper in the first place (see the dns-cluster fix there),
+        // so there is no overlap-guard risk left here. No separate cron entry is needed - Hestia's
+        // own cron already calls "v-update-sys-queue daily" on its usual schedule.
         $hcpp->add_action( 'v_update_sys_queue', function( $args ) use( $hcpp ) {
             if ( isset( $args[0] ) && trim( $args[0] ) === 'daily') {
                 $hcpp->self_update();
@@ -1493,6 +1550,25 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             return $args;
         });
 
+        // PERFORMANCE: publish the list of v-* commands that have plugin hooks. local.conf reads it and runs
+        // every other command directly, without starting php and loading all plugins.
+        if ( isset( $argv[1] ) && strpos( $argv[1], 'v-' ) === 0 && ! $hcpp->logging ) {
+            $hcpp_manifest = '/usr/local/hestia/data/hcpp/hooked-cmds';
+            if ( is_dir( dirname( $hcpp_manifest ) ) && is_writable( dirname( $hcpp_manifest ) ) ) {
+                $hcpp_cmds = [];
+                foreach ( array_keys( $hcpp->hcpp_filters ) as $hcpp_tag ) {
+                    if ( strpos( $hcpp_tag, 'v_' ) === 0 ) $hcpp_cmds[] = preg_replace( '/_output$/', '', $hcpp_tag );
+                }
+                $hcpp_cmds = array_unique( $hcpp_cmds );
+                sort( $hcpp_cmds );
+                $hcpp_tmp = $hcpp_manifest . '.' . getmypid();
+                if ( @file_put_contents( $hcpp_tmp, implode( "\n", $hcpp_cmds ) . "\n" ) !== false ) {
+                    @chmod( $hcpp_tmp, 0644 );
+                    if ( ! @rename( $hcpp_tmp, $hcpp_manifest ) ) @unlink( $hcpp_tmp );
+                }
+            }
+        }
+
         // Check for a /usr/local/hestia/bin/v- action via /etc/hestiacp/local.conf
         // and invoke any add_actions
         if ( isset( $argv[1] ) && strpos( $argv[1], 'v-' ) === 0 ) {
@@ -1501,10 +1577,8 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
             // Get the remaining arguments after argv[1], if any otherwise set to empty array
             $args = array_slice( $argv, 2 );
 
-            // Remove double slash encoding and double single quotes from arguments
-            $args = array_map(function($arg) {
-                return str_replace(["''",'\\'], ['',''], $arg);
-            }, $args);
+            // PATCH: arguments arrive unmodified from local.conf (no %q encoding there any more),
+            // so they no longer need to be unstripped here.
             $args = $hcpp->do_action( $bin_command, $args );
 
             // Escape the remaining arguments
