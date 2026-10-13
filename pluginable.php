@@ -1512,14 +1512,14 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
         $hcpp->add_action( 'hcpp_invoke_plugin', function( $args ) use( $hcpp ) {
 
             // Return the version of the given plugin
-            if ( $args[0] == 'get_plugin_version' ) {
+            if ( isset( $args[0] ) && $args[0] == 'get_plugin_version' ) {
                 $plugin = $args[1];
                 $version = $hcpp->get_repo_folder_tag( '/usr/local/hestia/plugins/' . $plugin );
                 echo $version;
             }
 
             // Enable/Disable a plugin
-            if ( $args[0] == 'hcpp_config' ) {
+            if ( isset( $args[0] ) && $args[0] == 'hcpp_config' ) {
                 $v = $args[1];
                 $plugin = $args[2];
                 switch( $v ) {
