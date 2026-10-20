@@ -650,6 +650,7 @@ if ( !class_exists( 'HCPP') ) {
             // functions pluginable needs are removed from the list; everything else stays disabled.
             // The original list is saved next to php.ini (php.ini.hcpp.bak) and restored on uninstall.
             $hcpp_allow = [ 'exec', 'shell_exec', 'proc_open', 'posix_getpwuid', 'posix_getuid', 'curl_init', 'curl_exec' ];
+            $fpm_restart = [];
             foreach ( glob( '/etc/php/*/{fpm,cli}/php.ini', GLOB_BRACE ) as $ini ) {
                 $content = file_get_contents( $ini );
                 if ( $content === false || ! preg_match( '/^;?disable_functions\s*=[ \t]*(.*)$/m', $content, $orig ) ) continue;
@@ -660,7 +661,10 @@ if ( !class_exists( 'HCPP') ) {
                     } );
                     return 'disable_functions = ' . implode( ',', $list );
                 }, $content );
-                file_put_contents( $ini, $content );
+                if ( $content !== file_get_contents( $ini ) ) {
+                    file_put_contents( $ini, $content );
+                    if ( basename( dirname( $ini ) ) === 'fpm' ) $fpm_restart[] = 'php' . basename( dirname( $ini, 2 ) ) . '-fpm';
+                }
             }
 
             // Install the hcpp_rebooted action hook service
@@ -690,6 +694,14 @@ if ( !class_exists( 'HCPP') ) {
                 echo "Installed hcpp_rebooted.service\n";
             } else {
                 echo "hcpp_rebooted.service already exists. Skipping.\n";
+            }
+
+            // php.ini is only read when php-fpm starts; restart Hestia's own php-fpm (auto_prepend/append_file)
+            // and any system php-fpm whose disable_functions changed. --no-block so a restart issued from
+            // within a running Hestia update or UI request doesn't hang or kill this process.
+            exec( 'systemctl --no-block restart hestia' );
+            foreach ( array_unique( $fpm_restart ) as $svc ) {
+                exec( 'systemctl --no-block try-restart ' . escapeshellarg( $svc ) );
             }
             echo "Install complete";
         }

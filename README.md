@@ -38,7 +38,7 @@ Run the post_install.sh script:
 sudo /etc/hestiacp/hooks/post_install.sh
 ```
 
-This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
+The script restarts the `hestia` service (and any php-fpm service whose php.ini it patched) so the changes take effect immediately; if you patch files manually instead, run `sudo systemctl restart hestia` afterwards. This will automatically be run anytime HestiaCP updates itself. You may wish to re-run it if you have created new templates in /usr/local/hestia/data/templates/web/php-fpm, as this will include the patches for open_basedir, auto_prepend/append. Currently, this project is compatible with HestiaCP v1.9.X in Nginx + Apache2 with Multi-PHP installation options.
 
 ---
 
