@@ -202,7 +202,23 @@ if ( !class_exists( 'HCPP') ) {
 
             // Run the path specific actions for html
             if ( $path != 'index.php' ) {
-                $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
+                if ( file_exists( '/etc/hestiacp/hooks/debug-html' ) && isset( $this->hcpp_filters[ 'hcpp_' . $path . '_html' ] ) ) {
+                    // Diagnostics (touch /etc/hestiacp/hooks/debug-html): per-filter trace in /tmp/hcpp-html.log
+                    if ( preg_match( '~<ul\b[^>]*units-table-row-actions[^>]*>.*?</ul>~is', $html, $dm ) ) {
+                        @file_put_contents( '/tmp/hcpp-row.html', preg_replace( '~token=[A-Za-z0-9]+~', 'token=X', $dm[0] ) );
+                    }
+                    $dbg = 'path=' . $path . ' uri=' . ( $_SERVER['REQUEST_URI'] ?? '' ) . ' dom=' . ( $need_dom ? 1 : 0 ) . ' len=' . strlen( $html ) . "\n";
+                    foreach ( $this->hcpp_filters[ 'hcpp_' . $path . '_html' ] as $k => $func ) {
+                        $before = strlen( $html );
+                        try { $r = call_user_func( $func, $html ); } catch ( Throwable $e ) { $dbg .= "  $k EXCEPTION " . $e->getMessage() . "\n"; continue; }
+                        $dbg .= "  $k " . ( is_string( $r ) ? 'ok' : 'NON-STRING(' . gettype( $r ) . ')' ) . " $before->" . ( is_string( $r ) ? strlen( $r ) : '-' ) . ' preg_err=' . preg_last_error_msg() . "\n";
+                        if ( is_string( $r ) ) $html = $r;
+                    }
+                    $dbg .= '  row-actions=' . substr_count( $html, 'units-table-row-actions' ) . "\n";
+                    @file_put_contents( '/tmp/hcpp-html.log', $dbg, FILE_APPEND );
+                } else {
+                    $html = $this->do_action( 'hcpp_' . $path . '_html', $html );
+                }
             }
 
             // Run all pages actions after specifics for html
@@ -619,19 +635,10 @@ if ( !class_exists( 'HCPP') ) {
                 if ( strpos( $file, 'no-php.tpl' ) !== false ) {
                     continue;
                 }
-                // Patch php-fpm templates open_basedir to include /usr/local/hestia/plugins and /usr/local/hestia/data/hcpp
-                $this->patch_file( 
-                    $file,
-                    "\nphp_admin_value[open_basedir] =",
-                    "\nphp_admin_value[open_basedir] = /home/%user%/.composer:/home/%user%/web/%domain%/public_html:/home/%user%/web/%domain%/private:/home/%user%/web/%domain%/public_shtml:/home/%user%/tmp:/tmp:/var/www/html:/bin:/usr/bin:/usr/local/bin:/usr/share:/opt:/usr/local/hestia/plugins:/usr/local/hestia/data/hcpp\n;php_admin_value[open_basedir] ="
-                );
-
-                // Patch php-fpm templates to support plugins prepend/append system
-                $this->patch_file( 
-                    $file,
-                    "\nphp_admin_value[open_basedir] =",
-                    "\nphp_admin_value[auto_prepend_file] = /usr/local/hestia/data/hcpp/prepend.php\n\nphp_admin_value[auto_append_file] = /usr/local/hestia/data/hcpp/append.php\nphp_admin_value[open_basedir] ="
-                );
+                // Site pools are not patched with the hcpp prepend/append (PHP allows only one
+                // auto_prepend_file, and php_admin_value would block the sites' own one, e.g. Wordfence)
+                // or the extended open_basedir. Remove both if a template was patched earlier.
+                $this->unpatch_fpm_template( $file );
             }
 
             // Patch /usr/local/hestia/func/domain.sh
@@ -738,6 +745,27 @@ if ( !class_exists( 'HCPP') ) {
 
             // Use PHP's native error logging function
             error_log( $msg, 3, $logFile );
+        }
+
+        /**
+         * Remove the hcpp patches from a site php-fpm template - prepend/append and the
+         * extended open_basedir (restores the original open_basedir line the patch commented out).
+         *
+         * @param string $file Path to the .tpl file
+         */
+        public function unpatch_fpm_template( $file ) {
+            $content = @file_get_contents( $file );
+            if ( $content === false ) return;
+            $new = preg_replace(
+                '/^php_admin_value\[auto_(?:prepend|append)_file\] = \/usr\/local\/hestia\/data\/hcpp\/(?:prepend|append)\.php\n\n?/m',
+                '', $content );
+            $new = preg_replace(
+                '/^php_admin_value\[open_basedir\] = [^\n]*:\/usr\/local\/hestia\/plugins:\/usr\/local\/hestia\/data\/hcpp\n;(php_admin_value\[open_basedir\] =)/m',
+                '$1', $new );
+            if ( $new !== null && $new !== $content ) {
+                file_put_contents( $file, $new );
+                $this->log( "Unpatched hcpp prepend/append/open_basedir in $file" );
+            }
         }
 
         /**
