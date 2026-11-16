@@ -1606,7 +1606,41 @@ if ( !isset( $hcpp ) || $hcpp === null ) {
                 $process = proc_open( $cmd, array( 0 => STDIN, 1 => STDOUT, 2 => STDERR ), $pipes, null, null );
                 exit( proc_close( $process ) );
             }
-
+            
+// Run from a terminal (admin in the console): show the output live as it comes and still
+// pass the full output to the <command>_output hooks afterwards. Hooks can't change what is
+// already on screen, so a modified output is not printed again. Non-interactive callers (panel,
+// scripts, cron) keep the buffered path below, where hooks may rewrite the output.
+if ( function_exists( 'stream_isatty' ) && @stream_isatty( STDOUT ) ) {
+    $process = proc_open( $cmd, array( 0 => STDIN, 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes, null, null );
+    stream_set_blocking( $pipes[1], false );
+    stream_set_blocking( $pipes[2], false );
+    $output = '';
+    $open = array( 1 => $pipes[1], 2 => $pipes[2] );
+    while ( $open ) {
+        $read = array_values( $open );
+        $w = $e = null;
+        if ( @stream_select( $read, $w, $e, 1 ) === false ) break;
+        foreach ( $open as $fd => $pipe ) {
+            $chunk = fread( $pipe, 8192 );
+            if ( $chunk !== false && $chunk !== '' ) {
+                if ( $fd === 1 ) {
+                    $output .= $chunk;
+                    fwrite( STDOUT, $chunk );
+                } else {
+                    fwrite( STDERR, $chunk );
+                }
+            }
+            if ( feof( $pipe ) ) {
+                fclose( $pipe );
+                unset( $open[ $fd ] );
+            }
+        }
+    }
+    $return_val = proc_close( $process );
+    $hcpp->do_action( $bin_command . '_output', $output );
+    exit( $return_val );
+}
             $descriptorspec = array(
                 0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
                 1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
